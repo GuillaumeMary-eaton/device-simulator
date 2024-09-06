@@ -1,11 +1,8 @@
 package com.eaton.telemetry;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import com.eaton.telemetry.modifier.Modifier;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
@@ -47,17 +44,9 @@ public class Device {
      * @param name the name of the device
      * @param modifiers the modifiers
      */
-    Device(@JsonProperty("name") final String name, @JsonProperty("modifiers") final Modifier[] modifiers, @JsonProperty(value = "vlans") final Long[] vlans) {
+    public Device(String name, List<Modifier> modifiers, List<Long> vlans) {
         this.name = name;
-        if (modifiers != null) {
-            this.modifiers = Collections.unmodifiableList(Arrays.asList(modifiers));
-        } else {
-            this.modifiers = Collections.emptyList();
-        }
-        if (vlans != null) {
-            this.vlans = Collections.unmodifiableList(Arrays.asList(vlans));
-        } else {
-            this.vlans = Collections.emptyList();
-        }
+        this.modifiers = modifiers;
+        this.vlans = vlans;
     }
 }

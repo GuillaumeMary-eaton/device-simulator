@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -24,15 +25,16 @@ import org.snmp4j.smi.OctetString;
 import org.snmp4j.smi.TimeTicks;
 import org.snmp4j.smi.Variable;
 
-/** Helper class for reading SNMP walks.
- * */
+/**
+ * Helper class for reading SNMP walks.
+ */
 @Slf4j
 public class Walks {
 
     /**
      * The default charset for files being read.
      */
-    private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
+    private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
     /**
      * The pattern of variable bindings in a walk file.
@@ -48,23 +50,23 @@ public class Walks {
 
     }
 
-    /** Reads a walk from a file.
+    /**
+     * Reads a walk from a file.
+     *
      * @param walk the walk file to read.
      * @return the map of oid to variable binding from the file.
      * @throws IOException if the file could not be read.
-     * */
-    public static Map<OID, Variable> readWalk(final File walk) throws IOException {
+     */
+    public static Map<OID, Variable> readWalk(File walk) throws IOException {
         log.debug("Reading walk from file {}", walk);
-        try (final FileInputStream fileInputStream = new FileInputStream(walk);
-             final BufferedReader reader = new BufferedReader(new InputStreamReader(fileInputStream, DEFAULT_CHARSET))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(walk), DEFAULT_CHARSET))) {
             Map<OID, Variable> result = readVariableBindings(walk, reader);
             log.debug("Walk contains {} variable bindings", result.size());
             return result;
-        }
-        catch (final FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
             log.error("walk file {} not found", walk.getAbsolutePath());
             throw e;
-        } catch (final IOException e) {
+        } catch (IOException e) {
             log.error("could not read walk file " + walk.getAbsolutePath(), e);
             throw e;
         }
@@ -76,8 +78,8 @@ public class Walks {
      * @param reader the reader to read the bindings from.
      * @return the map of oid to variable binding.
      */
-    private static Map<OID, Variable> readVariableBindings(final File walk, final BufferedReader reader) throws IOException {
-        final Map<OID, Variable> bindings = new HashMap<>();
+    private static Map<OID, Variable> readVariableBindings(File walk, BufferedReader reader) throws IOException {
+        Map<OID, Variable> bindings = new HashMap<>();
         OID lastOid = null;
         String lastType = null;
         String line;
@@ -88,11 +90,11 @@ public class Walks {
             Matcher matcher = VARIABLE_BINDING_PATTERN.matcher(line);
             if (matcher.matches()) {
                 match = true;
-                final OID oid = new OID(matcher.group(1).replace("iso", ".1"));
+                OID oid = new OID(matcher.group(1).replace("iso", ".1"));
                 lastOid = oid;
 
                 try {
-                    final Variable variable;
+                    Variable variable;
                     if (matcher.group(7) == null) {
                         lastType = "STRING";
                         variable = getVariable("STRING", "\"\"");
@@ -103,7 +105,7 @@ public class Walks {
 
                     bindings.put(oid, variable);
                     log.trace("added binding from line {} with oid \"{}\" and variable \"{}\"", lineNumber, oid, variable);
-                } catch (final Exception e) {
+                } catch (Exception e) {
                     log.warn("could not parse line {} with \"{}\" of walk file {} with exception: {}", lineNumber, line, walk.getCanonicalPath(), e.getMessage());
                 }
             }
@@ -163,7 +165,7 @@ public class Walks {
      * @return a a {@link Variable} instance with the specified type and value
      * @throws IllegalArgumentException if the type could not be mapped to a {@link Variable} implementation
      */
-    private static Variable getVariable(final String type, final String value) {
+    private static Variable getVariable(String type, String value) {
         switch (type) {
             // TODO add "BITS" support
             case "STRING":
@@ -174,7 +176,7 @@ public class Walks {
                 if (use.endsWith("\"")) {
                     use = use.substring(0, use.length() - 1);
                 }
-                if (use.length() == 0) {
+                if (use.isEmpty()) {
                     return new OctetString();
                 }
                 return new OctetString(use);
@@ -183,8 +185,8 @@ public class Walks {
             case "Gauge32":
                 return new Gauge32(Long.parseLong(value.replaceAll("[^-?0-9]+", "")));
             case "Timeticks":
-                final int openBracket = value.indexOf("(") + 1;
-                final int closeBracket = value.indexOf(")");
+                int openBracket = value.indexOf("(") + 1;
+                int closeBracket = value.indexOf(")");
                 if (openBracket == 0 || closeBracket < 0) {
                     throw new IllegalArgumentException("could not parse time tick value in " + value);
                 }

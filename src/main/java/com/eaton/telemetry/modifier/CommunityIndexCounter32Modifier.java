@@ -1,12 +1,9 @@
 package com.eaton.telemetry.modifier;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.TreeMap;
 
-import com.eaton.telemetry.type.ModifierProperties;
 import lombok.Getter;
 import org.snmp4j.smi.Counter32;
 import org.snmp4j.smi.OID;
@@ -20,28 +17,10 @@ public class CommunityIndexCounter32Modifier implements CommunityContextModifier
     /**
      * Mapping of SNMP community context to SNMP OID and result.
      */
-    @Getter private Map<Long, Long> communityContextMapping = new HashMap<>();
+    @Getter private final Map<Long, Long> communityContextMapping;
 
-    @Override
-    public void init(final ModifierProperties properties) {
-        communityContextMapping = new HashMap<>();
-        properties.entrySet().stream().filter(property -> getUnsignedLong(property.getKey()) != -1L &&
-                getUnsignedLong(property.getValue()) != -1L).forEach(property ->
-                communityContextMapping.put(getUnsignedLong(property.getKey()), getUnsignedLong(property.getValue())));
-    }
-
-    private Long getUnsignedLong(final Object input) {
-        try {
-            if (!Optional.ofNullable(input).isPresent()) {
-                // not present
-                return -1L;
-            }
-            final String value = String.valueOf(input);
-            return Long.parseLong(value);
-        } catch (NumberFormatException e) {
-            // s is not numeric
-            return -11L;
-        }
+    public CommunityIndexCounter32Modifier(Map<Long, Long> communityContextMapping) {
+        this.communityContextMapping = communityContextMapping;
     }
 
     @Override

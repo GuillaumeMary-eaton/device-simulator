@@ -1,8 +1,5 @@
 package com.eaton.telemetry.modifier;
 
-import java.util.Optional;
-
-import com.eaton.telemetry.type.ModifierProperties;
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.UnsignedInteger;
 import lombok.Getter;
@@ -14,25 +11,22 @@ import org.snmp4j.smi.UnsignedInteger32;
 abstract class AbstractIntegerModifier<T extends UnsignedInteger32> implements VariableModifier<T> {
 
     /** The minimum allowed number for the resulting modified variable. */
-    @Getter private long minimum;
+    @Getter private final long minimum;
 
     /** The maximum allowed number for the resulting modified variable. */
-    @Getter private long maximum;
+    @Getter private final long maximum;
 
     /** The minimal step by which a variable will be incremented. */
-    @Getter private long minimumStep;
+    @Getter private final long minimumStep;
 
     /** The maximal step by which a variable will be incremented. */
-    @Getter private long maximumStep;
+    @Getter private final long maximumStep;
 
-    @Override
-    public void init(final ModifierProperties properties) {
-        this.minimum = Optional.ofNullable(properties.getLong("minimum")).orElse(0L);
-        this.maximum = Optional.ofNullable(properties.getLong("maximum")).orElse(UnsignedInteger.MAX_VALUE.longValue());
-
-        this.minimumStep = Optional.ofNullable(properties.getLong("minimumStep")).orElse(0L);
-        this.maximumStep = Optional.ofNullable(properties.getLong("maximumStep")).orElse(1L);
-
+    public AbstractIntegerModifier(long minimum, long maximum, long minimumStep, long maximumStep) {
+        this.minimum = minimum;
+        this.maximum = maximum;
+        this.minimumStep = minimumStep;
+        this.maximumStep = maximumStep;
         Preconditions.checkArgument(minimum >= 0, "minimum should not be negative");
         Preconditions.checkArgument(maximum >= 0, "maximum should not be negative");
 

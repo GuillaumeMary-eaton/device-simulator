@@ -2,10 +2,8 @@ package com.eaton.telemetry.modifier;
 
 import java.lang.reflect.InvocationTargetException;
 
-import com.eaton.telemetry.type.ModifierProperties;
-import com.eaton.telemetry.type.WildcardOID;
 import com.eaton.telemetry.InitializationException;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.eaton.telemetry.type.WildcardOID;
 import lombok.Getter;
 import org.snmp4j.smi.OID;
 import org.snmp4j.smi.Variable;
@@ -34,20 +32,22 @@ public class Modifier<T extends Variable> implements VariableModifier<T> {
      *
      * @param oid the wildcard OID to define the OID range {@code this} modifier should process
      * @param modifierClass the class of the modifier
-     * @param properties the initialization properties
      */
-    @SuppressWarnings("unchecked")
-    public Modifier(@JsonProperty("oid") final String oid,
-                    @JsonProperty("class") final String modifierClass,
-                    @JsonProperty("properties") final ModifierProperties properties) {
+    public Modifier(String oid,
+                    Class<? extends VariableModifier<T>> modifierClass) {
         this.oid = new WildcardOID(oid);
 
         try {
-            this.modifier = (VariableModifier) Class.forName(modifierClass).getConstructor().newInstance();
-            this.modifier.init(properties);
-        } catch (final ClassNotFoundException | NoSuchMethodException | InstantiationException | InvocationTargetException | IllegalAccessException e) {
+            this.modifier = modifierClass.getConstructor().newInstance();
+        } catch (NoSuchMethodException | InstantiationException | InvocationTargetException | IllegalAccessException e) {
             throw new InitializationException("could not construct a modifier for the oid " + oid + " and class " + modifierClass, e);
         }
+    }
+
+    public Modifier(String oid,
+                    VariableModifier<T> modifier) {
+        this.oid = new WildcardOID(oid);
+        this.modifier = modifier;
     }
 
     /**

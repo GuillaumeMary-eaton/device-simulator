@@ -1,8 +1,5 @@
 package com.eaton.telemetry.modifier;
 
-import java.util.Optional;
-
-import com.eaton.telemetry.type.ModifierProperties;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.snmp4j.smi.Integer32;
@@ -12,24 +9,22 @@ import org.snmp4j.smi.Integer32;
 public class Integer32Modifier implements VariableModifier<Integer32> {
 
     /** The minimum allowed number for the resulting modified variable. */
-    @Getter private Integer minimum;
+    @Getter private final Integer minimum;
 
     /** The maximum allowed number for the resulting modified variable. */
-    @Getter private Integer maximum;
+    @Getter private final Integer maximum;
 
     /** The minimal step by which a variable will be incremented. */
-    @Getter private Integer minimumStep;
+    @Getter private final Integer minimumStep;
 
     /** The maximal step by which a variable will be incremented. */
-    @Getter private Integer maximumStep;
+    @Getter private final Integer maximumStep;
 
-    @Override
-    public void init(final ModifierProperties properties) {
-        this.minimum = Optional.ofNullable(properties.getInteger("minimum")).orElse(Integer.MIN_VALUE);
-        this.maximum = Optional.ofNullable(properties.getInteger("maximum")).orElse(Integer.MAX_VALUE);
-
-        this.minimumStep = Optional.ofNullable(properties.getInteger("minimumStep")).orElse(-1);
-        this.maximumStep = Optional.ofNullable(properties.getInteger("maximumStep")).orElse(1);
+    public Integer32Modifier(Integer minimum, Integer maximum, Integer minimumStep, Integer maximumStep) {
+        this.minimum = minimum;
+        this.maximum = maximum;
+        this.minimumStep = minimumStep;
+        this.maximumStep = maximumStep;
     }
 
     /**

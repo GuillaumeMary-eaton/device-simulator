@@ -1,6 +1,5 @@
 package com.eaton.telemetry.modifier;
 
-import com.eaton.telemetry.type.ModifierProperties;
 import org.snmp4j.smi.Variable;
 
 /** Abstract definition of a variable modifier. 
@@ -15,11 +14,4 @@ public interface VariableModifier<T extends Variable> {
      * @return the modified variable
      */
     T modify(final T variable);
-
-    /**
-     * Initialize {@code this} variable modifier by the specified {@code properties}.
-     *
-     * @param properties the initialization properties
-     */
-    default void init(final ModifierProperties properties) { }
 }
