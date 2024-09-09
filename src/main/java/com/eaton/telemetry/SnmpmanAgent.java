@@ -479,4 +479,24 @@ public class SnmpmanAgent extends BaseAgent {
                 new OctetString(communityString + "2" + communityString).toSubIndex(true), com2sec);
         snmpCommunityMIB.getSnmpCommunityEntry().addRow(row);
     }
+
+    /**
+     * Wait until specified agent is started.
+     * <br>
+     * A call of this method is blocking.
+     *
+     * @throws InitializationException if the specified agent is already stopped
+     */
+    public void waitForStartup() {
+        if (getAgentState() == STATE_STOPPED) {
+            throw new InitializationException("agent " + getName() + " already stopped while initialization was running");
+        } else if (getAgentState() != STATE_RUNNING) {
+            try {
+                Thread.sleep(100L);
+                waitForStartup();
+            } catch (InterruptedException e) {
+                log.warn("wait was interrupted", e);
+            }
+        }
+    }
 }

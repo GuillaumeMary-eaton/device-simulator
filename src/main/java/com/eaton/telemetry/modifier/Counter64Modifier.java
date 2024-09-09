@@ -21,6 +21,13 @@ public class Counter64Modifier implements VariableModifier<Counter64> {
     /** The maximal step by which a variable will be incremented. */
     @Getter private final UnsignedLong maximumStep;
 
+    /**
+     * Creates a default counter starting from 0 to {@link Integer#MAX_VALUE} with a step between 1 and 10.
+     */
+    public Counter64Modifier() {
+        this(0, Long.MAX_VALUE, 1, 10);
+    }
+
     public Counter64Modifier(long minimum, long maximum, long minimumStep, long maximumStep) {
         this(UnsignedLong.valueOf(minimum), UnsignedLong.valueOf(maximum), UnsignedLong.valueOf(minimumStep), UnsignedLong.valueOf(maximumStep));
     }
@@ -34,14 +41,14 @@ public class Counter64Modifier implements VariableModifier<Counter64> {
     }
 
     @Override
-    public Counter64 modify(final Counter64 variable) {
+    public Counter64 modify(Counter64 variable) {
         UnsignedLong currentValue = UnsignedLong.valueOf(variable.toString());
         if (currentValue.compareTo(minimum) < 0 || currentValue.compareTo(maximum) > 0) {
             currentValue = minimum;
         }
 
-        final UnsignedLong step = UnsignedLong.valueOf((long) (Math.random() * maximumStep.minus(minimumStep).longValue())).plus(minimumStep);
-        final UnsignedLong newValue = currentValue.plus(step);
+        UnsignedLong step = UnsignedLong.valueOf((long) (Math.random() * maximumStep.minus(minimumStep).longValue())).plus(minimumStep);
+        UnsignedLong newValue = currentValue.plus(step);
 
         return new Counter64(newValue.longValue());
     }

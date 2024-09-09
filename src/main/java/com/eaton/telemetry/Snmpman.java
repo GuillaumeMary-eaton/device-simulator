@@ -36,7 +36,53 @@ import org.snmp4j.agent.BaseAgent;
  * The configuration {@code YAML} file defines a list of all agents that should be simulated by the {@code Snmpman}.
  */
 @Slf4j
-public final class Snmpman {
+public class Snmpman {
+
+    /**
+     * Creates an {@code Snmpman} instance by the specified configuration in the {@code configurationFile} and starts all agents.
+     *
+     * @param configurationFile the configuration
+     * @return the {@code Snmpman} instance
+     * @throws InitializationException thrown if any agent, as specified in the configuration, could not be started
+     */
+    public static Snmpman start(File configurationFile) {
+        Preconditions.checkNotNull(configurationFile, "the configuration file may not be null");
+        Preconditions.checkArgument(configurationFile.exists() && configurationFile.isFile(), "configuration does not exist or is not a file");
+
+        log.debug("started with configuration in path {}", configurationFile.getAbsolutePath());
+        try {
+            ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+            AgentConfiguration[] configurations = mapper.readValue(configurationFile, AgentConfiguration[].class);
+
+            return start(configurations);
+        } catch (IOException e) {
+            throw new InitializationException("could not parse configuration at path: " + configurationFile.getAbsolutePath(), e);
+        }
+    }
+
+    /**
+     * Creates an {@code Snmpman} instance by the specified configuration in the {@code configurationFile} and starts all agents.
+     *
+     * @param configurations the configurations
+     * @return the {@code Snmpman} instance
+     * @throws InitializationException thrown if any agent, as specified in the configuration, could not be started
+     */
+    public static Snmpman start(AgentConfiguration ... configurations) {
+        return Snmpman.start(Arrays.stream(configurations).map(SnmpmanAgent::new).collect(Collectors.toList()));
+    }
+
+    /**
+     * Creates a {@code Snmpman} instance with the specified list of agents and starts all agents.
+     *
+     * @param agents the list of agents
+     * @return the {@code Snmpman} instance
+     * @throws InitializationException thrown if any agent, as specified in the configuration, could not be started
+     */
+    public static Snmpman start(List<SnmpmanAgent> agents) {
+        Snmpman snmpman = new Snmpman(Collections.unmodifiableList(agents));
+        snmpman.start();
+        return snmpman;
+    }
 
     /**
      * Returns the list of SNMP agents for {@code this} instance.
@@ -50,56 +96,12 @@ public final class Snmpman {
      *
      * @param agents the agents for {@code this} instance
      */
-    private Snmpman(final List<SnmpmanAgent> agents) {
+    private Snmpman(List<SnmpmanAgent> agents) {
         this.agents = agents;
     }
 
-    /**
-     * Creates an {@code Snmpman} instance by the specified configuration in the {@code configurationFile} and starts all agents.
-     *
-     * @param configurationFile the configuration
-     * @return the {@code Snmpman} instance
-     * @throws InitializationException thrown if any agent, as specified in the configuration, could not be started
-     */
-    public static Snmpman start(final File configurationFile) {
-        Preconditions.checkNotNull(configurationFile, "the configuration file may not be null");
-        Preconditions.checkArgument(configurationFile.exists() && configurationFile.isFile(), "configuration does not exist or is not a file");
-
-        log.debug("started with configuration in path {}", configurationFile.getAbsolutePath());
-        try {
-            final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-            final AgentConfiguration[] configurations = mapper.readValue(configurationFile, AgentConfiguration[].class);
-
-            return start(configurations);
-        } catch (final IOException e) {
-            throw new InitializationException("could not parse configuration at path: " + configurationFile.getAbsolutePath(), e);
-        }
-    }
-
-    /**
-     * Creates an {@code Snmpman} instance by the specified configuration in the {@code configurationFile} and starts all agents.
-     *
-     * @param configurations the configurations
-     * @return the {@code Snmpman} instance
-     * @throws InitializationException thrown if any agent, as specified in the configuration, could not be started
-     */
-    public static Snmpman start(final AgentConfiguration ... configurations) {
-        final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-
-        return Snmpman.start(Arrays.stream(configurations).map(SnmpmanAgent::new).collect(Collectors.toList()));
-    }
-
-    /**
-     * Creates a {@code Snmpman} instance with the specified list of agents and starts all agents.
-     *
-     * @param agents the list of agents
-     * @return the {@code Snmpman} instance
-     * @throws InitializationException thrown if any agent, as specified in the configuration, could not be started
-     */
-    public static Snmpman start(final List<SnmpmanAgent> agents) {
-        final Snmpman snmpman = new Snmpman(Collections.unmodifiableList(agents));
-        snmpman.start();
-        return snmpman;
+    public SnmpmanAgent getAgent(String name) {
+        return agents.stream().filter(agent -> agent.getName().equals(name)).findFirst().orElse(null);
     }
 
     /**
@@ -109,10 +111,10 @@ public final class Snmpman {
      */
     private void start() {
         log.debug("starting to load agents");
-        for (final SnmpmanAgent agent : agents) {
+        for (SnmpmanAgent agent : agents) {
             try {
                 agent.execute();
-            } catch (final IOException e) {
+            } catch (IOException e) {
                 throw new InitializationException("failed to start agent \"" + agent.getName() + "\"", e);
             }
         }
@@ -129,14 +131,14 @@ public final class Snmpman {
      * @param agent the agent to wait for
      * @throws InitializationException if the specified agent is already stopped
      */
-    private void checkStatus(final SnmpmanAgent agent) {
+    private void checkStatus(SnmpmanAgent agent) {
         if (agent.getAgentState() == BaseAgent.STATE_STOPPED) {
             throw new InitializationException("agent " + agent.getName() + " already stopped while initialization was running");
         } else if (agent.getAgentState() != BaseAgent.STATE_RUNNING) {
             try {
                 Thread.sleep(100L);
                 checkStatus(agent);
-            } catch (final InterruptedException e) {
+            } catch (InterruptedException e) {
                 log.warn("wait was interrupted", e);
             }
         }

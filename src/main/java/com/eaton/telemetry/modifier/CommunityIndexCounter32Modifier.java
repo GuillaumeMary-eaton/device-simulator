@@ -24,7 +24,7 @@ public class CommunityIndexCounter32Modifier implements CommunityContextModifier
     }
 
     @Override
-    public final Counter32 modify(final Counter32 variable) {
+    public final Counter32 modify(Counter32 variable) {
         if (variable == null) {
             return new Counter32(0);
         }
@@ -32,7 +32,7 @@ public class CommunityIndexCounter32Modifier implements CommunityContextModifier
     }
 
     @Override
-    public Map<OID, Variable> getVariableBindings(final OctetString context, final OID queryOID) {
+    public Map<OID, Variable> getVariableBindings(OctetString context, OID queryOID) {
         if (queryOID != null && context != null && context.getValue().length != 0) {
             if (!queryOID.toString().isEmpty() && !context.toString().isEmpty() && communityContextMapping.containsKey(Long.parseLong(context.toString()))) {
                 return Collections.singletonMap(queryOID, new Counter32(communityContextMapping.get(Long.parseLong(context.toString()))));

@@ -18,7 +18,7 @@ import org.snmp4j.smi.Variable;
 public class Modifier<T extends Variable> implements VariableModifier<T> {
 
     /** The OID range {@code this} modifier should process. */
-    private final WildcardOID oid;
+    @Getter final WildcardOID oid;
 
     /**
      * The wrapped variable modifier for this generic modifier.
@@ -56,7 +56,7 @@ public class Modifier<T extends Variable> implements VariableModifier<T> {
      * @param oid the oid to check
      * @return {@code true} if this modifier is applicable for the specified {@code oid}, otherwise {@code false}
      */
-    public boolean isApplicable(final OID oid) {
+    public boolean isApplicable(OID oid) {
         return this.oid.matches(oid);
     }
 

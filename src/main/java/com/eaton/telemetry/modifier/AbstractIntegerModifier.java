@@ -43,7 +43,7 @@ abstract class AbstractIntegerModifier<T extends UnsignedInteger32> implements V
     protected abstract T cast(long value);
 
     @Override
-    public final T modify(final T variable) {
+    public final T modify(T variable) {
         long currentValue = variable.getValue();
         if (currentValue < minimum || currentValue > maximum) {
             currentValue = minimum;

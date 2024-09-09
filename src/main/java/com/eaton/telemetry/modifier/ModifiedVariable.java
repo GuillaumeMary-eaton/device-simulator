@@ -30,13 +30,13 @@ public class ModifiedVariable implements Variable, Cloneable {
      * @param variable  the initial variable to modify
      * @param modifiers the list of modifiers that should modify this variable
      */
-    public ModifiedVariable(final Variable variable, final List<VariableModifier> modifiers) {
+    public ModifiedVariable(Variable variable, List<VariableModifier> modifiers) {
         this.variable = variable;
         this.modifiers = Collections.unmodifiableList(modifiers);
     }
 
     @Override
-    public int compareTo(final Variable variable) {
+    public int compareTo(Variable variable) {
         return this.variable.compareTo(variable);
     }
 
@@ -44,7 +44,7 @@ public class ModifiedVariable implements Variable, Cloneable {
     @Override
     public Object clone() {
         log.trace("variable {} will be cloned", variable);
-        for (final VariableModifier modifier : modifiers) {
+        for (VariableModifier modifier : modifiers) {
             this.variable = modifier.modify(variable);
         }
         return this.variable.clone();
@@ -87,12 +87,12 @@ public class ModifiedVariable implements Variable, Cloneable {
     }
 
     @Override
-    public OID toSubIndex(final boolean b) {
+    public OID toSubIndex(boolean b) {
         return variable.toSubIndex(b);
     }
 
     @Override
-    public void fromSubIndex(final OID oid, final boolean b) {
+    public void fromSubIndex(OID oid, boolean b) {
         variable.fromSubIndex(oid, b);
     }
 
@@ -115,19 +115,19 @@ public class ModifiedVariable implements Variable, Cloneable {
     }
 
     @Override
-    public void decodeBER(final BERInputStream berInputStream) throws IOException {
+    public void decodeBER(BERInputStream berInputStream) throws IOException {
         log.trace("BER will be decoded for variable {}", variable);
         variable.decodeBER(berInputStream);
     }
 
     @Override
-    public void encodeBER(final OutputStream outputStream) throws IOException {
+    public void encodeBER(OutputStream outputStream) throws IOException {
         log.trace("BER will be encoded for variable {}", variable);
         variable.encodeBER(outputStream);
     }
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(Object o) {
         if (o instanceof ModifiedVariable) {
             return variable.equals(((ModifiedVariable) o).variable);
         }

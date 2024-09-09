@@ -42,7 +42,7 @@ public class MOGroup implements GenericManagedObject {
      * @param oid      the {@code OID} for a variable binding
      * @param variable the variable of the variable binding
      */
-    public MOGroup(final OID root, final OID oid, final Variable variable) {
+    public MOGroup(OID root, OID oid, Variable variable) {
         this.root = root;
         this.scope = new DefaultMOScope(root, true, root.nextPeer(), false);
         this.variableBindings = new TreeMap<>();
@@ -55,7 +55,7 @@ public class MOGroup implements GenericManagedObject {
      * @param root             the root {@code OID}
      * @param variableBindings the map of variable bindings for this instance
      */
-    public MOGroup(final OID root, final SortedMap<OID, Variable> variableBindings) {
+    public MOGroup(OID root, SortedMap<OID, Variable> variableBindings) {
         this.root = root;
         this.scope = new DefaultMOScope(root, true, root.nextPeer(), false);
         this.variableBindings = variableBindings;
@@ -67,12 +67,12 @@ public class MOGroup implements GenericManagedObject {
     }
 
     @Override
-    public OID find(final MOScope range) {
-        final SortedMap<OID, Variable> tail = variableBindings.tailMap(range.getLowerBound());
-        final OID first = tail.firstKey();
+    public OID find(MOScope range) {
+        SortedMap<OID, Variable> tail = variableBindings.tailMap(range.getLowerBound());
+        OID first = tail.firstKey();
         if (range.getLowerBound().equals(first) && !range.isLowerIncluded()) {
             if (tail.size() > 1) {
-                final Iterator<OID> it = tail.keySet().iterator();
+                Iterator<OID> it = tail.keySet().iterator();
                 it.next();
                 return it.next();
             }
@@ -83,9 +83,9 @@ public class MOGroup implements GenericManagedObject {
     }
 
     @Override
-    public void get(final SubRequest request) {
-        final OID oid = request.getVariableBinding().getOid();
-        final Variable variable = variableBindings.get(oid);
+    public void get(SubRequest request) {
+        OID oid = request.getVariableBinding().getOid();
+        Variable variable = variableBindings.get(oid);
         if (variable == null) {
             request.getVariableBinding().setVariable(Null.noSuchInstance);
         } else {
@@ -95,13 +95,13 @@ public class MOGroup implements GenericManagedObject {
     }
 
     @Override
-    public boolean next(final SubRequest request) {
-        final MOScope scope = request.getQuery().getScope();
-        final SortedMap<OID, Variable> tail = variableBindings.tailMap(scope.getLowerBound());
+    public boolean next(SubRequest request) {
+        MOScope scope = request.getQuery().getScope();
+        SortedMap<OID, Variable> tail = variableBindings.tailMap(scope.getLowerBound());
         OID first = tail.firstKey();
         if (scope.getLowerBound().equals(first) && !scope.isLowerIncluded()) {
             if (tail.size() > 1) {
-                final Iterator<OID> it = tail.keySet().iterator();
+                Iterator<OID> it = tail.keySet().iterator();
                 it.next();
                 first = it.next();
             } else {
@@ -109,7 +109,7 @@ public class MOGroup implements GenericManagedObject {
             }
         }
         if (first != null) {
-            final Variable variable = variableBindings.get(first);
+            Variable variable = variableBindings.get(first);
             // TODO remove try / catch if no more errors occur
             // TODO add configuration check with types though (e.g. UInt32 == UInt32 Modifier?)
             try {
@@ -150,7 +150,7 @@ public class MOGroup implements GenericManagedObject {
      * @param request The SubRequest to handle.
      */
     @Override
-    public void commit(final SubRequest request) {
+    public void commit(SubRequest request) {
         Variable newValue = request.getVariableBinding().getVariable();
         OID oid = request.getVariableBinding().getOid();
         if (variableBindings.getOrDefault(oid, newValue).getSyntax() == newValue.getSyntax()) {
@@ -168,7 +168,7 @@ public class MOGroup implements GenericManagedObject {
      * @param request The SubRequest to handle.
      */
     @Override
-    public void undo(final SubRequest request) {
+    public void undo(SubRequest request) {
         if (request.getUndoValue() instanceof Variable) {
             variableBindings.put(request.getVariableBinding().getOid(), (Variable) request.getUndoValue());
         } else {
@@ -178,7 +178,7 @@ public class MOGroup implements GenericManagedObject {
     }
 
     @Override
-    public void cleanup(final SubRequest request) {
+    public void cleanup(SubRequest request) {
         // do nothing here
     }
 

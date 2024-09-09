@@ -5,6 +5,7 @@ import java.util.regex.Pattern;
 
 import com.google.common.base.Preconditions;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import org.snmp4j.smi.OID;
 
 /**
@@ -22,10 +23,10 @@ public class WildcardOID {
     private static final Pattern WILDCARD_OID_PATTERN = Pattern.compile("((\\.)?[0-9]+(\\.[0-9]+)*)(\\.\\*)?((\\.[0-9]+)*)");
 
     /** The first part of the wildcard {@code OID} (before the "{@code *}" character). */
-    private final OID startsWith;
+    @Getter private final OID startsWith;
 
     /** The second part of the wildcard {@code OID} (after the "{@code *}" character). Can be {@code null}. */
-    private final OID endsWith;
+    @Getter private final OID endsWith;
 
     /**
      * Constructs a new instance of this class.
@@ -34,10 +35,10 @@ public class WildcardOID {
      * @throws NullPointerException     if the specified {@code OID} is null
      * @throws IllegalArgumentException if the specified {@code OID} contains more than one wildcard character
      */
-    public WildcardOID(final String oid) {
+    public WildcardOID(String oid) {
         Preconditions.checkNotNull(oid, "oid may not be null");
 
-        final Matcher matcher = WILDCARD_OID_PATTERN.matcher(oid);
+        Matcher matcher = WILDCARD_OID_PATTERN.matcher(oid);
         if (matcher.matches()) {
             this.startsWith = new OID(matcher.group(1));
             if (matcher.group(5).isEmpty()) {
@@ -63,7 +64,7 @@ public class WildcardOID {
      * @param oid the {@code OID} to test
      * @return {@code true} if the {@code OID}s are matching, otherwise {@code false}
      */
-    public boolean matches(final OID oid) {
+    public boolean matches(OID oid) {
         return oid.startsWith(startsWith) && (endsWith == null || oid.size() >= endsWith.size() && oid.rightMostCompare(endsWith.size(), endsWith) == 0);
     }
 

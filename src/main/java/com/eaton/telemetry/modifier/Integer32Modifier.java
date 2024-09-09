@@ -20,6 +20,13 @@ public class Integer32Modifier implements VariableModifier<Integer32> {
     /** The maximal step by which a variable will be incremented. */
     @Getter private final Integer maximumStep;
 
+    /**
+     * Creates a default integer starting from 0 to {@link Integer#MAX_VALUE} with a step between 1 and 10.
+     */
+    public Integer32Modifier() {
+        this(0, Integer.MAX_VALUE, 1, 10);
+    }
+
     public Integer32Modifier(Integer minimum, Integer maximum, Integer minimumStep, Integer maximumStep) {
         this.minimum = minimum;
         this.maximum = maximum;
@@ -39,7 +46,7 @@ public class Integer32Modifier implements VariableModifier<Integer32> {
      * @param maximumStep  {@link #maximumStep}
      * @return the modified variable value
      */
-    protected int modify(final int currentValue, final int minimum, final int maximum, final int minimumStep, final int maximumStep) {
+    protected int modify(int currentValue, int minimum, int maximum, int minimumStep, int maximumStep) {
         int currentValidValue = currentValue;
         if (currentValue < minimum || currentValue > maximum) {
             currentValidValue = minimum;
@@ -64,8 +71,8 @@ public class Integer32Modifier implements VariableModifier<Integer32> {
     }
 
     @Override
-    public Integer32 modify(final Integer32 variable) {
-        final int newValue = this.modify(variable.getValue(), minimum, maximum, minimumStep, maximumStep);
+    public Integer32 modify(Integer32 variable) {
+        int newValue = this.modify(variable.getValue(), minimum, maximum, minimumStep, maximumStep);
         log.trace("Counter32 variable {} will be tuned to {}", variable.getValue(), newValue);
         return new Integer32(newValue);
     }

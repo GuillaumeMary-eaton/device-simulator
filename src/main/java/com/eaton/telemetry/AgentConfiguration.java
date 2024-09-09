@@ -2,6 +2,9 @@ package com.eaton.telemetry;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.attribute.FileAttribute;
 import java.util.Optional;
 
 import lombok.EqualsAndHashCode;
@@ -18,6 +21,21 @@ import org.snmp4j.smi.GenericAddress;
 @ToString(exclude = "community")
 @EqualsAndHashCode
 public class AgentConfiguration {
+
+    /**
+     * Wraps {@link Files#createTempDirectory(String, FileAttribute[])} to avoid its {@link IOException} by embedding
+     * it into a {@link RuntimeException}
+     *
+     * @param prefix the prefix string to be used in generating the directory's name; may be null
+     * @return the path to the newly created directory that did not exist before this method was invoked
+     */
+    private static File createTempDirectory(@Nullable String prefix) {
+        try {
+            return Files.createTempDirectory(prefix).toFile();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /**
      * Returns the name of the agent.
@@ -62,6 +80,30 @@ public class AgentConfiguration {
      */
     @Getter
     private final String community; // e.g. 'public'
+
+    /**
+     * Constructs a new agent configuration.
+     * <br>
+     * The list of agent configurations will be parsed from within {@link Snmpman}.
+     *
+     * @param name                 the name of the agent or {@code null} to set the address as the name
+     * @param device               the device
+     * @param ip                   the IP the agent should bind to
+     * @param port                 the port of the agent
+     * @param community            the community of the agent or {@code null} will set it to {@code public}
+     */
+    public AgentConfiguration(@Nullable String name,
+                              Device device,
+                              String ip,
+                              int port,
+                              @Nullable String community) {
+        this(
+                Optional.ofNullable(name).orElse(ip + ":" + port),
+                GenericAddress.parse(ip + "/" + port),
+                device,
+                Optional.ofNullable(community).orElse("public"),
+                createTempDirectory(name));
+    }
 
     /**
      * Constructs a new agent configuration.
