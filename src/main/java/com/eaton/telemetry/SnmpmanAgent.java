@@ -40,6 +40,8 @@ import org.snmp4j.mp.MPv3;
 import org.snmp4j.security.SecurityLevel;
 import org.snmp4j.security.SecurityModel;
 import org.snmp4j.security.USM;
+import org.snmp4j.smi.Address;
+import org.snmp4j.smi.GenericAddress;
 import org.snmp4j.smi.Integer32;
 import org.snmp4j.smi.OID;
 import org.snmp4j.smi.OctetString;
@@ -103,6 +105,8 @@ public class SnmpmanAgent extends BaseAgent {
      */
     private final AgentConfiguration configuration;
 
+    private final Address destination;
+
     /**
      * The list of managed object groups.
      */
@@ -132,6 +136,7 @@ public class SnmpmanAgent extends BaseAgent {
         this.agent.setWorkerPool(ThreadPool.create("RequestPool", 3));
         this.configuration = configuration;
         this.bindings = bindings;
+        this.destination = GenericAddress.parse("udp:" + configuration.getAddress().getHostName() + "/" + configuration.getAddress().getPort());
     }
 
     public void setBindings(Map<OID, Variable> bindings) {
@@ -184,7 +189,7 @@ public class SnmpmanAgent extends BaseAgent {
     protected void initTransportMappings() {
         log.trace("starting to initialize transport mappings for agent \"{}\"", configuration.getName());
         transportMappings = new TransportMapping[1];
-        TransportMapping tm = TransportMappings.getInstance().createTransportMapping(configuration.getAddress());
+        TransportMapping tm = TransportMappings.getInstance().createTransportMapping(destination);
         transportMappings[0] = tm;
     }
 

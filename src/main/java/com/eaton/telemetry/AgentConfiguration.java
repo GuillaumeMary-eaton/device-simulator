@@ -3,6 +3,7 @@ package com.eaton.telemetry;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.attribute.FileAttribute;
 import java.util.Optional;
@@ -11,8 +12,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import org.snmp4j.smi.Address;
-import org.snmp4j.smi.GenericAddress;
 
 /**
  * Representation of the configuration for a {@link SnmpmanAgent}.
@@ -53,7 +52,7 @@ public class AgentConfiguration {
      * @return the address of the agent
      */
     @Getter
-    private final Address address; // e.g. 127.0.0.1/8080
+    private final InetSocketAddress address; // e.g. 127.0.0.1/8080
 
     /**
      * Returns the {@link Device} representation for the agent.
@@ -99,7 +98,19 @@ public class AgentConfiguration {
                               @Nullable String community) {
         this(
                 Optional.ofNullable(name).orElse(ip + ":" + port),
-                GenericAddress.parse(ip + "/" + port),
+                new InetSocketAddress(ip, port),
+                device,
+                Optional.ofNullable(community).orElse("public"),
+                createTempDirectory(name));
+    }
+
+    public AgentConfiguration(@Nullable String name,
+                              Device device,
+                              InetSocketAddress address,
+                              @Nullable String community) {
+        this(
+                Optional.ofNullable(name).orElseGet(address::toString),
+                address,
                 device,
                 Optional.ofNullable(community).orElse("public"),
                 createTempDirectory(name));
@@ -125,13 +136,13 @@ public class AgentConfiguration {
                               File persistenceDirectory) {
         this(
                 Optional.ofNullable(name).orElse(ip + ":" + port),
-                GenericAddress.parse(ip + "/" + port),
+                new InetSocketAddress(ip, port),
                 device,
                 Optional.ofNullable(community).orElse("public"),
                 persistenceDirectory);
     }
 
-    public AgentConfiguration(String name, Address address, Device device, @Nullable String community, File persistenceDirectory) {
+    public AgentConfiguration(String name, InetSocketAddress address, Device device, @Nullable String community, File persistenceDirectory) {
         this.name = name;
         this.address = address;
         this.device = device;
