@@ -5,7 +5,7 @@ import java.util.Map;
 
 import com.eaton.telemetry.AgentConfiguration;
 import com.eaton.telemetry.Device;
-import com.eaton.telemetry.SnmpmanAgent;
+import com.eaton.telemetry.SnmpAgent;
 import com.eaton.telemetry.Walks;
 import com.eaton.telemetry.modifier.CommunityIndexCounter32Modifier;
 import com.eaton.telemetry.modifier.Counter32Modifier;
@@ -18,7 +18,7 @@ public class Server {
 
     public static void main(String[] args) throws IOException {
 
-        SnmpmanAgent agent = new SnmpmanAgent(new AgentConfiguration(
+        SnmpAgent agent = new SnmpAgent(new AgentConfiguration(
                 "example",
                 new Device(
                         "Cisco",

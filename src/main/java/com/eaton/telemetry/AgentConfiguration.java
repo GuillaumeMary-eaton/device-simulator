@@ -14,7 +14,7 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Representation of the configuration for a {@link SnmpmanAgent}.
+ * Representation of the configuration for a {@link SnmpAgent}.
  */
 @Slf4j
 @ToString(exclude = "community")
@@ -83,7 +83,7 @@ public class AgentConfiguration {
     /**
      * Constructs a new agent configuration.
      * <br>
-     * The list of agent configurations will be parsed from within {@link Snmpman}.
+     * The list of agent configurations will be parsed from within {@link SnmpApplication}.
      *
      * @param name                 the name of the agent or {@code null} to set the address as the name
      * @param device               the device
@@ -119,7 +119,7 @@ public class AgentConfiguration {
     /**
      * Constructs a new agent configuration.
      * <br>
-     * The list of agent configurations will be parsed from within {@link Snmpman}.
+     * The list of agent configurations will be parsed from within {@link SnmpApplication}.
      *
      * @param name                 the name of the agent or {@code null} to set the address as the name
      * @param device               the device

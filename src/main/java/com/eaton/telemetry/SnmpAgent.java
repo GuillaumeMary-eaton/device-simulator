@@ -51,13 +51,13 @@ import org.snmp4j.transport.TransportMappings;
 import org.snmp4j.util.ThreadPool;
 
 /**
- * This is the core class of the {@code Snmpman}. The agent simulates the SNMP-capable devices.
+ * This is the core class of the {@code SnmpApplication}. The agent simulates the SNMP-capable devices.
  * <br>
- * This class can be instantiated via the constructor {@link #SnmpmanAgent(AgentConfiguration)}, which
+ * This class can be instantiated via the constructor {@link #SnmpAgent(AgentConfiguration)}, which
  * requires an instance of the {@link AgentConfiguration}.
  */
 @Slf4j
-public class SnmpmanAgent extends BaseAgent {
+public class SnmpAgent extends BaseAgent {
 
     /**
      * Returns the root OIDs of the bindings.
@@ -119,7 +119,7 @@ public class SnmpmanAgent extends BaseAgent {
      *
      * @param configuration the configuration for this agent
      */
-    public SnmpmanAgent(AgentConfiguration configuration) {
+    public SnmpAgent(AgentConfiguration configuration) {
         this(configuration, new HashMap<>());
     }
 
@@ -129,7 +129,7 @@ public class SnmpmanAgent extends BaseAgent {
      * @param configuration the configuration for this agent
      * @param bindings data to be exposed by the agent
      */
-    public SnmpmanAgent(AgentConfiguration configuration, Map<OID, Variable> bindings) {
+    public SnmpAgent(AgentConfiguration configuration, Map<OID, Variable> bindings) {
         super(new File(configuration.getPersistenceDirectory(), configuration.getName() + ".BC.cfg"),
                 new File(configuration.getPersistenceDirectory(), configuration.getName() + ".Config.cfg"),
                 new CommandProcessor(new OctetString(MPv3.createLocalEngineID())));
@@ -143,11 +143,11 @@ public class SnmpmanAgent extends BaseAgent {
         this.bindings = bindings;
     }
 
-    public SnmpmanAgent addBinding(String oid, Variable variable) {
+    public SnmpAgent addBinding(String oid, Variable variable) {
         return addBinding(new OID(oid), variable);
     }
 
-    public SnmpmanAgent addBinding(OID oid, Variable variable) {
+    public SnmpAgent addBinding(OID oid, Variable variable) {
         this.bindings.put(oid, variable);
         return this;
     }
@@ -208,7 +208,7 @@ public class SnmpmanAgent extends BaseAgent {
 
             OctetString context = new OctetString(String.valueOf(vlan));
 
-            List<OID> roots = SnmpmanAgent.getRoots(variableBindings);
+            List<OID> roots = SnmpAgent.getRoots(variableBindings);
             for (OID root : roots) {
                 MOGroup group = createGroup(root, variableBindings);
                 Iterable<VariableBinding> subtree = generateSubtreeBindings(variableBindings, root);
@@ -250,7 +250,7 @@ public class SnmpmanAgent extends BaseAgent {
      */
     private void createAndRegisterDefaultContext() {
         SortedMap<OID, Variable> variableBindings = this.getVariableBindings(new OctetString());
-        List<OID> roots = SnmpmanAgent.getRoots(variableBindings);
+        List<OID> roots = SnmpAgent.getRoots(variableBindings);
         for (OID root : roots) {
             MOGroup group = createGroup(root, variableBindings);
             registerDefaultGroups(group);

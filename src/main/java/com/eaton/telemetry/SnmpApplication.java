@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.snmp4j.agent.BaseAgent;
 
 /**
- * This is the library interface for Snmpman.
+ * This is the library interface for SnmpApplication.
  * <br>
  * Each configuration list item represents an instance of the {@link AgentConfiguration}.
  * The constructor {@link AgentConfiguration#AgentConfiguration(String, java.io.File, java.io.File, String, int, String)}
@@ -33,19 +33,19 @@ import org.snmp4j.agent.BaseAgent;
  * </pre>
  * You can find more example within the test resources of this project.
  * <br>
- * The configuration {@code YAML} file defines a list of all agents that should be simulated by the {@code Snmpman}.
+ * The configuration {@code YAML} file defines a list of all agents that should be simulated by the {@code SnmpApplication}.
  */
 @Slf4j
-public class Snmpman {
+public class SnmpApplication {
 
     /**
-     * Creates an {@code Snmpman} instance by the specified configuration in the {@code configurationFile} and starts all agents.
+     * Creates an {@code SnmpApplication} instance by the specified configuration in the {@code configurationFile} and starts all agents.
      *
      * @param configurationFile the configuration
-     * @return the {@code Snmpman} instance
+     * @return the {@code SnmpApplication} instance
      * @throws InitializationException thrown if any agent, as specified in the configuration, could not be started
      */
-    public static Snmpman start(File configurationFile) {
+    public static SnmpApplication start(File configurationFile) {
         Preconditions.checkNotNull(configurationFile, "the configuration file may not be null");
         Preconditions.checkArgument(configurationFile.exists() && configurationFile.isFile(), "configuration does not exist or is not a file");
 
@@ -61,27 +61,27 @@ public class Snmpman {
     }
 
     /**
-     * Creates an {@code Snmpman} instance by the specified configuration in the {@code configurationFile} and starts all agents.
+     * Creates an {@code SnmpApplication} instance by the specified configuration in the {@code configurationFile} and starts all agents.
      *
      * @param configurations the configurations
-     * @return the {@code Snmpman} instance
+     * @return the {@code SnmpApplication} instance
      * @throws InitializationException thrown if any agent, as specified in the configuration, could not be started
      */
-    public static Snmpman start(AgentConfiguration ... configurations) {
-        return Snmpman.start(Arrays.stream(configurations).map(SnmpmanAgent::new).collect(Collectors.toList()));
+    public static SnmpApplication start(AgentConfiguration ... configurations) {
+        return SnmpApplication.start(Arrays.stream(configurations).map(SnmpAgent::new).collect(Collectors.toList()));
     }
 
     /**
-     * Creates a {@code Snmpman} instance with the specified list of agents and starts all agents.
+     * Creates a {@code SnmpApplication} instance with the specified list of agents and starts all agents.
      *
      * @param agents the list of agents
-     * @return the {@code Snmpman} instance
+     * @return the {@code SnmpApplication} instance
      * @throws InitializationException thrown if any agent, as specified in the configuration, could not be started
      */
-    public static Snmpman start(List<SnmpmanAgent> agents) {
-        Snmpman snmpman = new Snmpman(Collections.unmodifiableList(agents));
-        snmpman.start();
-        return snmpman;
+    public static SnmpApplication start(List<SnmpAgent> agents) {
+        SnmpApplication snmpApplication = new SnmpApplication(Collections.unmodifiableList(agents));
+        snmpApplication.start();
+        return snmpApplication;
     }
 
     /**
@@ -89,18 +89,18 @@ public class Snmpman {
      *
      * @return the list of SNMP agents
      */
-    @Getter private final List<SnmpmanAgent> agents;
+    @Getter private final List<SnmpAgent> agents;
 
     /**
      * Constructs an instance by the specified list of agents.
      *
      * @param agents the agents for {@code this} instance
      */
-    private Snmpman(List<SnmpmanAgent> agents) {
+    private SnmpApplication(List<SnmpAgent> agents) {
         this.agents = agents;
     }
 
-    public SnmpmanAgent getAgent(String name) {
+    public SnmpAgent getAgent(String name) {
         return agents.stream().filter(agent -> agent.getName().equals(name)).findFirst().orElse(null);
     }
 
@@ -111,7 +111,7 @@ public class Snmpman {
      */
     private void start() {
         log.debug("starting to load agents");
-        for (SnmpmanAgent agent : agents) {
+        for (SnmpAgent agent : agents) {
             try {
                 agent.execute();
             } catch (IOException e) {
@@ -131,7 +131,7 @@ public class Snmpman {
      * @param agent the agent to wait for
      * @throws InitializationException if the specified agent is already stopped
      */
-    private void checkStatus(SnmpmanAgent agent) {
+    private void checkStatus(SnmpAgent agent) {
         if (agent.getAgentState() == BaseAgent.STATE_STOPPED) {
             throw new InitializationException("agent " + agent.getName() + " already stopped while initialization was running");
         } else if (agent.getAgentState() != BaseAgent.STATE_RUNNING) {
@@ -146,6 +146,6 @@ public class Snmpman {
 
     /** Stops all agents as defined in {@link #agents}. */
     public void stop() {
-        agents.forEach(SnmpmanAgent::stop);
+        agents.forEach(SnmpAgent::stop);
     }
 }
