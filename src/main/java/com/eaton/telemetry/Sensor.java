@@ -1,29 +1,44 @@
 package com.eaton.telemetry;
 
+import java.time.Duration;
+import java.util.function.Supplier;
+
 import com.eaton.telemetry.modifier.VariableModifier;
+import lombok.Getter;
 import org.snmp4j.smi.OID;
 import org.snmp4j.smi.Variable;
 
 public class Sensor<V extends Variable> {
 
+    @Getter
     private final OID oid;
 
-    private V variable;
+    private final Supplier<V> valueGenerator;
 
-    private final VariableModifier<V> modifier;
+    @Getter
+    private final Duration period;
 
-    public Sensor(OID oid, V seed,  VariableModifier<V> modifier) {
+    @Getter
+    private final Duration initialDelay;
+
+    public Sensor(OID oid, V initialValue, VariableModifier<V> variableModifier, Duration period, Duration initialDelay) {
+        this(oid, () -> {
+            V value = initialValue;
+            if (variableModifier != null) {
+                value = variableModifier.modify(value);
+            }
+            return value;
+        }, period, initialDelay);
+    }
+
+    public Sensor(OID oid, Supplier<V> valueGenerator, Duration period, Duration initialDelay) {
         this.oid = oid;
-        this.variable = seed;
-        this.modifier = modifier;
+        this.valueGenerator = valueGenerator;
+        this.period = period;
+        this.initialDelay = initialDelay;
     }
 
-    public OID getOid() {
-        return oid;
-    }
-
-    public Variable getCurrentValue() {
-        variable = modifier.modify(variable);
-        return variable;
+    public V getValue() {
+        return valueGenerator.get();
     }
 }
