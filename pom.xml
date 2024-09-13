@@ -40,6 +40,24 @@
             <artifactId>slf4j-api</artifactId>
             <version>1.7.36</version>
         </dependency>
+        <!-- Be aware that this dependency is a GPL2.0 licensed one -->
+        <dependency>
+            <groupId>net.solarnetwork.common</groupId>
+            <artifactId>nifty-modbus-tcp</artifactId>
+            <version>0.17.0</version>
+        </dependency>
+        <!-- nifty-modbus-core must be added because nifty-modbus-tcp only defines it as a runtime dependency -->
+        <dependency>
+            <groupId>net.solarnetwork.common</groupId>
+            <artifactId>nifty-modbus-core</artifactId>
+            <version>0.17.0</version>
+        </dependency>
+        <!-- nifty-modbus-api must be added because nifty-modbus-tcp only defines it as a runtime dependency -->
+        <dependency>
+            <groupId>net.solarnetwork.common</groupId>
+            <artifactId>nifty-modbus-api</artifactId>
+            <version>0.17.0</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
