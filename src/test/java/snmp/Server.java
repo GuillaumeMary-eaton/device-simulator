@@ -1,18 +1,20 @@
+package snmp;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import com.eaton.telemetry.AgentConfiguration;
-import com.eaton.telemetry.Device;
-import com.eaton.telemetry.SnmpAgent;
-import com.eaton.telemetry.Walks;
-import com.eaton.telemetry.modifier.CommunityIndexCounter32Modifier;
-import com.eaton.telemetry.modifier.Counter32Modifier;
-import com.eaton.telemetry.modifier.Counter64Modifier;
-import com.eaton.telemetry.modifier.Gauge32Modifier;
-import com.eaton.telemetry.modifier.Integer32Modifier;
-import com.eaton.telemetry.modifier.Modifier;
+import com.eaton.telemetry.snmp.AgentConfiguration;
+import com.eaton.telemetry.snmp.Device;
+import com.eaton.telemetry.snmp.SnmpAgent;
+import com.eaton.telemetry.snmp.Walks;
+import com.eaton.telemetry.snmp.modifier.CommunityIndexCounter32Modifier;
+import com.eaton.telemetry.snmp.modifier.Counter32Modifier;
+import com.eaton.telemetry.snmp.modifier.Counter64Modifier;
+import com.eaton.telemetry.snmp.modifier.Gauge32Modifier;
+import com.eaton.telemetry.snmp.modifier.Integer32Modifier;
+import com.eaton.telemetry.snmp.modifier.Modifier;
 
 public class Server {
 

@@ -1,4 +1,4 @@
-package com.eaton.telemetry.modifier;
+package com.eaton.telemetry.snmp.modifier;
 
 import java.util.Collections;
 import java.util.Map;

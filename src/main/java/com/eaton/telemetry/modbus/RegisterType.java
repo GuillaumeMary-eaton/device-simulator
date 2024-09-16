@@ -1,4 +1,4 @@
-package com.eaton.telemetry;
+package com.eaton.telemetry.modbus;
 
 /**
  * Content generated thanks to Copilot.

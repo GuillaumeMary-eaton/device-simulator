@@ -1,8 +1,8 @@
-package com.eaton.telemetry;
+package com.eaton.telemetry.snmp;
 
 import java.util.List;
 
-import com.eaton.telemetry.modifier.Modifier;
+import com.eaton.telemetry.snmp.modifier.Modifier;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
@@ -25,7 +25,7 @@ public class Device {
     /**
      * The unmodifiable list of modifier definitions.
      * <br>
-     * See {@link Modifier} and {@link com.eaton.telemetry.modifier.VariableModifier}.
+     * See {@link Modifier} and {@link com.eaton.telemetry.snmp.modifier.VariableModifier}.
      *
      * @return list of modifier definitions
      */

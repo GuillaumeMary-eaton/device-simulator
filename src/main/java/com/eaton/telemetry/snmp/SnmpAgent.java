@@ -1,4 +1,4 @@
-package com.eaton.telemetry;
+package com.eaton.telemetry.snmp;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,10 +12,10 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import com.eaton.telemetry.modifier.CommunityContextModifier;
-import com.eaton.telemetry.modifier.ModifiedVariable;
-import com.eaton.telemetry.modifier.Modifier;
-import com.eaton.telemetry.modifier.VariableModifier;
+import com.eaton.telemetry.snmp.modifier.CommunityContextModifier;
+import com.eaton.telemetry.snmp.modifier.ModifiedVariable;
+import com.eaton.telemetry.snmp.modifier.Modifier;
+import com.eaton.telemetry.snmp.modifier.VariableModifier;
 import lombok.extern.slf4j.Slf4j;
 import org.snmp4j.TransportMapping;
 import org.snmp4j.agent.BaseAgent;
@@ -350,7 +350,7 @@ public class SnmpAgent extends BaseAgent {
     /**
      * Returns the variable bindings for a device configuration and a list of bindings.
      * <p>
-     * In this step the {@link com.eaton.telemetry.modifier.ModifiedVariable} instances will be created as a wrapper for dynamic variables.
+     * In this step the {@link com.eaton.telemetry.snmp.modifier.ModifiedVariable} instances will be created as a wrapper for dynamic variables.
      *
      * @return the variable bindings for the specified device configuration
      */

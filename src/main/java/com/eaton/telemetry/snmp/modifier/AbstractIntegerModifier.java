@@ -1,4 +1,4 @@
-package com.eaton.telemetry.modifier;
+package com.eaton.telemetry.snmp.modifier;
 
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.UnsignedInteger;

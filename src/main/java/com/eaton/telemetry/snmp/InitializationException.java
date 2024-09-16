@@ -1,4 +1,4 @@
-package com.eaton.telemetry;
+package com.eaton.telemetry.snmp;
 
 /** Exception type defines the failed initialization of the application. */
 public class InitializationException extends RuntimeException {

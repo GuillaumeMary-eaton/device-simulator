@@ -1,4 +1,4 @@
-package com.eaton.telemetry;
+package com.eaton.telemetry.snmp;
 
 import java.io.File;
 import java.io.IOException;

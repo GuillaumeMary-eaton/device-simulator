@@ -1,4 +1,4 @@
-package com.eaton.telemetry;
+package com.eaton.telemetry.snmp;
 
 import javax.annotation.Nullable;
 import java.io.File;

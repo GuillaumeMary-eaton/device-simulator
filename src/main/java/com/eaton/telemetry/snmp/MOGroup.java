@@ -1,4 +1,4 @@
-package com.eaton.telemetry;
+package com.eaton.telemetry.snmp;
 
 import java.util.Iterator;
 import java.util.SortedMap;

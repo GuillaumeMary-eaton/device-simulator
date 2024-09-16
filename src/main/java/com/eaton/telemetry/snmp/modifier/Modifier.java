@@ -1,9 +1,9 @@
-package com.eaton.telemetry.modifier;
+package com.eaton.telemetry.snmp.modifier;
 
 import java.lang.reflect.InvocationTargetException;
 
-import com.eaton.telemetry.InitializationException;
-import com.eaton.telemetry.type.WildcardOID;
+import com.eaton.telemetry.snmp.InitializationException;
+import com.eaton.telemetry.snmp.type.WildcardOID;
 import lombok.Getter;
 import org.snmp4j.smi.OID;
 import org.snmp4j.smi.Variable;
@@ -11,11 +11,11 @@ import org.snmp4j.smi.Variable;
 /**
  * Representation of a generic modifier.
  * <br>
- * See also {@link VariableModifier}.
+ * See also {@link com.eaton.telemetry.snmp.modifier.VariableModifier}.
  *
  * @param <T> the variable type
  */
-public class Modifier<T extends Variable> implements VariableModifier<T> {
+public class Modifier<T extends Variable> implements com.eaton.telemetry.snmp.modifier.VariableModifier<T> {
 
     /** The OID range {@code this} modifier should process. */
     @Getter final WildcardOID oid;
@@ -25,7 +25,7 @@ public class Modifier<T extends Variable> implements VariableModifier<T> {
      *
      * @return variable modifier.
      */
-    @Getter private final VariableModifier<T> modifier;
+    @Getter private final com.eaton.telemetry.snmp.modifier.VariableModifier<T> modifier;
 
     /**
      * Constructs a wrapped modifier.
@@ -34,7 +34,7 @@ public class Modifier<T extends Variable> implements VariableModifier<T> {
      * @param modifierClass the class of the modifier
      */
     public Modifier(String oid,
-                    Class<? extends VariableModifier<T>> modifierClass) {
+                    Class<? extends com.eaton.telemetry.snmp.modifier.VariableModifier<T>> modifierClass) {
         this.oid = new WildcardOID(oid);
 
         try {
@@ -45,7 +45,7 @@ public class Modifier<T extends Variable> implements VariableModifier<T> {
     }
 
     public Modifier(String oid,
-                    VariableModifier<T> modifier) {
+                    com.eaton.telemetry.snmp.modifier.VariableModifier<T> modifier) {
         this.oid = new WildcardOID(oid);
         this.modifier = modifier;
     }

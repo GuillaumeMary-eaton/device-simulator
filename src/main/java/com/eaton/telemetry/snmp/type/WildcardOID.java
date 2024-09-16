@@ -1,4 +1,4 @@
-package com.eaton.telemetry.type;
+package com.eaton.telemetry.snmp.type;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

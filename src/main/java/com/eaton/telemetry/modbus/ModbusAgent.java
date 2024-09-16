@@ -1,4 +1,4 @@
-package com.eaton.telemetry;
+package com.eaton.telemetry.modbus;
 
 import java.io.IOException;
 import java.math.BigInteger;

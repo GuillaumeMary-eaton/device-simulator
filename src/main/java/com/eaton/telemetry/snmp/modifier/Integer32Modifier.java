@@ -1,4 +1,4 @@
-package com.eaton.telemetry.modifier;
+package com.eaton.telemetry.snmp.modifier;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;

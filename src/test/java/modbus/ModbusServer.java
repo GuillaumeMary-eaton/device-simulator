@@ -1,3 +1,5 @@
+package modbus;
+
 import java.io.IOException;
 
 import net.solarnetwork.io.modbus.ModbusBlockType;

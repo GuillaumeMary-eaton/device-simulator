@@ -1,9 +1,9 @@
-package com.eaton.telemetry;
+package com.eaton.telemetry.snmp;
 
 import java.time.Duration;
 import java.util.function.Supplier;
 
-import com.eaton.telemetry.modifier.VariableModifier;
+import com.eaton.telemetry.snmp.modifier.VariableModifier;
 import lombok.Getter;
 import org.snmp4j.smi.OID;
 import org.snmp4j.smi.Variable;

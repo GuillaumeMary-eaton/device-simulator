@@ -1,3 +1,5 @@
+package snmp;
+
 import java.io.IOException;
 
 import org.snmp4j.CommunityTarget;
