@@ -102,7 +102,7 @@ public class SnmpTrapAgent {
      * Starts this agent and sends trap values (coming from sensors) to the destination.
      */
     public void start() {
-        sensors.stream().forEach(sensor -> {
+        sensors.forEach(sensor -> {
             executorService.scheduleAtFixedRate(() -> {
                 CommunityTarget target = new CommunityTarget();
                 target.setCommunity(new OctetString(community));
