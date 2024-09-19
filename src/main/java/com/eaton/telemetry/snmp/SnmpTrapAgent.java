@@ -13,7 +13,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntFunction;
 
 import lombok.extern.slf4j.Slf4j;
 import org.snmp4j.CommunityTarget;
@@ -52,25 +53,41 @@ public class SnmpTrapAgent {
 
     private final String community;
 
+    private Duration initialDelay;
+    private Duration period;
+
     /**
      * Basic constructor that creates a Snmp Trap sender Agent without sensor.
-     * Sensors can be added later with {@link #addSensor(OID, Supplier, Duration, Duration)}
+     * Sensors can be added later with {@link #addSensor(OID, IntFunction)}
      *
-     * @param configuration
+     * @param configuration agent configuraiton
+     * @param initialDelay initial delay before sending traps after {@link #start()} is called
+     * @param period time laps between each trap sending, generate a "tick" for each sensor
      */
-    public SnmpTrapAgent(AgentConfiguration configuration) {
-        this(configuration, new LinkedHashSet<>());
+    public SnmpTrapAgent(AgentConfiguration configuration, Duration initialDelay, Duration period) {
+        this(configuration, new LinkedHashSet<>(), initialDelay, period);
     }
 
-    public SnmpTrapAgent(AgentConfiguration configuration, Set<Sensor> sensors) {
-        this(GenericAddress.parse("udp:" + configuration.getAddress().getHostName() + "/" + configuration.getAddress().getPort()), configuration.getCommunity(), sensors);
+    public SnmpTrapAgent(AgentConfiguration configuration, Set<Sensor> sensors, Duration initialDelay, Duration period) {
+        this(GenericAddress.parse("udp:"
+                        + configuration.getAddress().getHostName()
+                        + "/" + configuration.getAddress().getPort()),
+                configuration.getCommunity(),
+                sensors,
+                initialDelay,
+                period);
     }
 
-    public SnmpTrapAgent(Address destination, @Nullable String community, Set<Sensor> sensors) {
-        this(destination, getLocalHost(), community, sensors);
+    public SnmpTrapAgent(Address destination, @Nullable String community, Set<Sensor> sensors, Duration initialDelay, Duration period) {
+        this(destination, getLocalHost(), community, sensors, initialDelay, period);
     }
 
-    public SnmpTrapAgent(Address destination, InetAddress sourceAddress, @Nullable String community, Set<Sensor> sensors) {
+    public SnmpTrapAgent(Address destination,
+                         InetAddress sourceAddress,
+                         @Nullable String community,
+                         Set<Sensor> sensors,
+                         Duration initialDelay,
+                         Duration period) {
         this.executorService = Executors.newScheduledThreadPool(1);
         this.sensors = sensors;
         this.destination = destination;
@@ -81,6 +98,8 @@ public class SnmpTrapAgent {
         } catch (SocketException e) {
             throw new RuntimeException(e);
         }
+        this.initialDelay = initialDelay;
+        this.period = period;
     }
 
     /**
@@ -89,12 +108,10 @@ public class SnmpTrapAgent {
      *
      * @param oid the Oid of the sensor
      * @param valueGenerator the generator of the values
-     * @param period the rhythm at which the values must be sent
-     * @param initialDelay the delay before sending the first data, starting from {@link #start()} call
      * @return this to eventually chain sensor addition
      */
-    public SnmpTrapAgent addSensor(OID oid, Supplier<Variable> valueGenerator, Duration period, Duration initialDelay) {
-        sensors.add(new Sensor<>(oid, valueGenerator, period, initialDelay));
+    public SnmpTrapAgent addSensor(OID oid, IntFunction<Variable> valueGenerator) {
+        sensors.add(new Sensor<>(oid, valueGenerator));
         return this;
     }
 
@@ -102,33 +119,39 @@ public class SnmpTrapAgent {
      * Starts this agent and sends trap values (coming from sensors) to the destination.
      */
     public void start() {
-        sensors.forEach(sensor -> {
-            executorService.scheduleAtFixedRate(() -> {
-                CommunityTarget target = new CommunityTarget();
-                target.setCommunity(new OctetString(community));
-                target.setAddress(destination);
-                log.debug("Sending traps to " + target.getAddress());
-                target.setVersion(SnmpConstants.version2c);
-                target.setTimeout(100); // milliseconds
-                target.setRetries(2);
+        executorService.scheduleAtFixedRate(() -> {
+            // each sensor will receive a "tick" for which t generate the value. This acts as a clock tick or counter.
+            AtomicInteger counter = new AtomicInteger(0);
+            sensors.forEach(sensor -> {
+                Variable value = sensor.getValue(counter.getAndIncrement());
+                // null value is considered as a marker to not send the trap
+                if (value != null) {
+                    CommunityTarget target = new CommunityTarget();
+                    target.setCommunity(new OctetString(community));
+                    target.setAddress(destination);
+                    log.debug("Sending traps to " + target.getAddress());
+                    target.setVersion(SnmpConstants.version2c);
+                    target.setTimeout(100); // milliseconds
+                    target.setRetries(2);
 
-                PDU pdu = new PDU();
-                // need to specify the system up time
-                pdu.add(new VariableBinding(SnmpConstants.sysUpTime, new OctetString(new Date().toString())));
-                pdu.add(new VariableBinding(SnmpConstants.snmpTrapOID, sensor.getOid()));
-                pdu.add(new VariableBinding(SnmpConstants.snmpTrapAddress, new IpAddress(sourceAddress)));
-                pdu.add(new VariableBinding(sensor.getOid(), sensor.getValue()));
-                pdu.setType(PDU.NOTIFICATION);
+                    PDU pdu = new PDU();
+                    // need to specify the system up time
+                    pdu.add(new VariableBinding(SnmpConstants.sysUpTime, new OctetString(new Date().toString())));
+                    pdu.add(new VariableBinding(SnmpConstants.snmpTrapOID, sensor.getOid()));
+                    pdu.add(new VariableBinding(SnmpConstants.snmpTrapAddress, new IpAddress(sourceAddress)));
+                    pdu.add(new VariableBinding(sensor.getOid(), value));
+                    pdu.setType(PDU.NOTIFICATION);
 
-                senderService.submit(() -> {
-                    try {
-                        return sendTrap(pdu, target);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            }, sensor.getInitialDelay().toMillis(), sensor.getPeriod().toMillis(), TimeUnit.MILLISECONDS);
-        });
+                    senderService.submit(() -> {
+                        try {
+                            return sendTrap(pdu, target);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                }
+            });
+        }, initialDelay.toMillis(), period.toMillis(), TimeUnit.MILLISECONDS);
     }
 
     private ResponseEvent<?> sendTrap(PDU pdu, CommunityTarget target) throws IOException {

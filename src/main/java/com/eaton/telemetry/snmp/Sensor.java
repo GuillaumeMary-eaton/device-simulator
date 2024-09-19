@@ -1,9 +1,7 @@
 package com.eaton.telemetry.snmp;
 
-import java.time.Duration;
-import java.util.function.Supplier;
+import java.util.function.IntFunction;
 
-import com.eaton.telemetry.snmp.modifier.VariableModifier;
 import lombok.Getter;
 import org.snmp4j.smi.OID;
 import org.snmp4j.smi.Variable;
@@ -13,32 +11,25 @@ public class Sensor<V extends Variable> {
     @Getter
     private final OID oid;
 
-    private final Supplier<V> valueGenerator;
+    private final IntFunction<V> valueGenerator;
 
-    @Getter
-    private final Duration period;
-
-    @Getter
-    private final Duration initialDelay;
-
-    public Sensor(OID oid, V initialValue, VariableModifier<V> variableModifier, Duration period, Duration initialDelay) {
-        this(oid, () -> {
-            V value = initialValue;
-            if (variableModifier != null) {
-                value = variableModifier.modify(value);
-            }
-            return value;
-        }, period, initialDelay);
-    }
-
-    public Sensor(OID oid, Supplier<V> valueGenerator, Duration period, Duration initialDelay) {
+    /**
+     * Creates a new sensor with the given OID and value generator.
+     *
+     * @param oid the identifier of the sensor
+     * @param valueGenerator a function returning a value for every "tick" it is called, the "tick" is represented by a counter
+     */
+    public Sensor(OID oid, IntFunction<V> valueGenerator) {
         this.oid = oid;
         this.valueGenerator = valueGenerator;
-        this.period = period;
-        this.initialDelay = initialDelay;
     }
 
-    public V getValue() {
-        return valueGenerator.get();
+    /**
+     * Returns a value for given "tick" / counter
+     * @param index the counter for which the value is for (starts from 0 to ... whatever value the agent runs to
+     * @return the value for the given counter
+     */
+    public V getValue(int index) {
+        return valueGenerator.apply(index);
     }
 }
