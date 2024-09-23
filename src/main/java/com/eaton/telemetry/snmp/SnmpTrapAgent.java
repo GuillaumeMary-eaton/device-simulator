@@ -119,12 +119,30 @@ public class SnmpTrapAgent {
      * Starts this agent and sends trap values (coming from sensors) to the destination.
      */
     public void start() {
-        executorService.scheduleAtFixedRate(() -> {
+        executorService.scheduleAtFixedRate(
+                new PDUSendTask(snmpSession),
+                initialDelay.toMillis(), period.toMillis(), TimeUnit.MILLISECONDS);
+    }
+
+    private class PDUSendTask implements Runnable {
+        /**
+         * Counter incremented at each run() call. A sensor is not expected to receive twice the same value.
+         */
+        private final AtomicInteger counter = new AtomicInteger(0);
+
+        private final Snmp snmpSession;
+
+        public PDUSendTask(Snmp snmpSession) {
+            this.snmpSession = snmpSession;
+        }
+
+        @Override
+        public void run() {
             // each sensor will receive a "tick" for which t generate the value. This acts as a clock tick or counter.
-            AtomicInteger counter = new AtomicInteger(0);
             sensors.forEach(sensor -> {
                 Variable value = sensor.getValue(counter.getAndIncrement());
                 // null value is considered as a marker to not send the trap
+                log.debug("generating value " + value + " for counter " + counter + " for sensor " + sensor.getOid());
                 if (value != null) {
                     CommunityTarget target = new CommunityTarget();
                     target.setCommunity(new OctetString(community));
@@ -151,10 +169,10 @@ public class SnmpTrapAgent {
                     });
                 }
             });
-        }, initialDelay.toMillis(), period.toMillis(), TimeUnit.MILLISECONDS);
-    }
+        }
 
-    private ResponseEvent<?> sendTrap(PDU pdu, CommunityTarget target) throws IOException {
-        return this.snmpSession.send(pdu, target);
+        private ResponseEvent<?> sendTrap(PDU pdu, CommunityTarget target) throws IOException {
+            return this.snmpSession.send(pdu, target);
+        }
     }
 }
