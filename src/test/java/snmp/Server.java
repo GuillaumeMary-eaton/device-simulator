@@ -4,9 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.eaton.telemetry.snmp.AgentConfiguration;
 import com.eaton.telemetry.snmp.Device;
+import com.eaton.telemetry.snmp.Sensor;
 import com.eaton.telemetry.snmp.SnmpAgent;
 import com.eaton.telemetry.snmp.Walks;
 import com.eaton.telemetry.snmp.modifier.CommunityIndexCounter32Modifier;
@@ -15,6 +17,8 @@ import com.eaton.telemetry.snmp.modifier.Counter64Modifier;
 import com.eaton.telemetry.snmp.modifier.Gauge32Modifier;
 import com.eaton.telemetry.snmp.modifier.Integer32Modifier;
 import com.eaton.telemetry.snmp.modifier.Modifier;
+import org.snmp4j.smi.OID;
+import org.snmp4j.smi.Variable;
 
 public class Server {
 
@@ -61,7 +65,8 @@ public class Server {
                 "127.0.0.1", 53142, null, new File(Server.class.getResource("/").getPath())
         ));
 
-        agent.setBindings(Walks.readWalk(new File(Server.class.getResource("/example.txt").getPath())));
+        Map<OID, Variable> oidVariableMap = Walks.readWalk(new File(Server.class.getResource("/example.txt").getPath()));
+        agent.setBindings(oidVariableMap.entrySet().stream().map(entry -> new Sensor(entry.getKey(), value -> entry.getValue())).collect(Collectors.toSet()));
 
         agent.execute();
     }

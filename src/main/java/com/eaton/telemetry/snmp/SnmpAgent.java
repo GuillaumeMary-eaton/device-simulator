@@ -3,13 +3,15 @@ package com.eaton.telemetry.snmp;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.BindException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import com.eaton.telemetry.snmp.modifier.CommunityContextModifier;
@@ -112,7 +114,9 @@ public class SnmpAgent extends BaseAgent {
      */
     private final List<ManagedObject> groups = new ArrayList<>();
 
-    private Map<OID, Variable> bindings;
+    private Set<Sensor> bindings;
+
+    private final AtomicInteger counter = new AtomicInteger(0);
 
     /**
      * Initializes a new instance of an SNMP agent.
@@ -120,26 +124,26 @@ public class SnmpAgent extends BaseAgent {
      * @param configuration the configuration for this agent
      */
     public SnmpAgent(AgentConfiguration configuration) {
-        this(configuration, new HashMap<>());
+        this(configuration, new HashSet<>());
     }
 
     /**
      * Initializes a new instance of an SNMP agent.
      *
      * @param configuration the configuration for this agent
-     * @param bindings data to be exposed by the agent
+     * @param sensors data to be exposed by the agent
      */
-    public SnmpAgent(AgentConfiguration configuration, Map<OID, Variable> bindings) {
+    public SnmpAgent(AgentConfiguration configuration, Set<Sensor> sensors) {
         super(new File(configuration.getPersistenceDirectory(), configuration.getName() + ".BC.cfg"),
                 new File(configuration.getPersistenceDirectory(), configuration.getName() + ".Config.cfg"),
                 new CommandProcessor(new OctetString(MPv3.createLocalEngineID())));
         this.agent.setWorkerPool(ThreadPool.create("RequestPool", 3));
         this.configuration = configuration;
-        this.bindings = bindings;
+        this.bindings = sensors;
         this.destination = GenericAddress.parse("udp:" + configuration.getAddress().getHostName() + "/" + configuration.getAddress().getPort());
     }
 
-    public void setBindings(Map<OID, Variable> bindings) {
+    public void setBindings(Set<Sensor> bindings) {
         this.bindings = bindings;
     }
 
@@ -148,7 +152,7 @@ public class SnmpAgent extends BaseAgent {
     }
 
     public SnmpAgent addBinding(OID oid, Variable variable) {
-        this.bindings.put(oid, variable);
+        this.bindings.add(new Sensor(oid, value -> variable));
         return this;
     }
 
@@ -188,9 +192,13 @@ public class SnmpAgent extends BaseAgent {
     @SuppressWarnings("unchecked")
     protected void initTransportMappings() {
         log.trace("starting to initialize transport mappings for agent \"{}\"", configuration.getName());
-        transportMappings = new TransportMapping[1];
-        TransportMapping tm = TransportMappings.getInstance().createTransportMapping(destination);
-        transportMappings[0] = tm;
+        try {
+            transportMappings = new TransportMapping[] { TransportMappings.getInstance().createTransportMapping(destination) };
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof BindException) {
+                throw new RuntimeException("could not bind to " + destination.getSocketAddress(), e.getCause());
+            }
+        }
     }
 
     @Override
@@ -357,14 +365,16 @@ public class SnmpAgent extends BaseAgent {
     @SuppressWarnings("unchecked")
     private SortedMap<OID, Variable> getVariableBindings(OctetString context) {
         log.trace("get variable bindings for agent \"{}\"", configuration.getName());
+        int tick = counter.getAndIncrement();
         SortedMap<OID, Variable> result = new TreeMap<>();
-        for (Map.Entry<OID, Variable> binding : bindings.entrySet()) {
-            List<VariableModifier> modifiers = configuration.getDevice().getModifiers().stream().filter(modifier -> modifier.isApplicable(binding.getKey())).collect(Collectors.toList());
+        for (Sensor binding : bindings) {
+            List<VariableModifier> modifiers = configuration.getDevice().getModifiers().stream()
+                    .filter(modifier -> modifier.isApplicable(binding.getOid())).collect(Collectors.toList());
 
             if (modifiers.isEmpty()) {
-                result.put(binding.getKey(), binding.getValue());
+                result.put(binding.getOid(), binding.getValue(tick));
             } else {
-                log.trace("created modified variable for OID {}", binding.getKey());
+                log.trace("created modified variable for OID {}", binding.getOid());
                 try {
                     List<CommunityContextModifier> contextModifiers = modifiers.stream()
                             .filter(Modifier.class::isInstance)
@@ -375,13 +385,13 @@ public class SnmpAgent extends BaseAgent {
                             .toList();
                     if (!contextModifiers.isEmpty()) {
                         for (CommunityContextModifier contextModifier : contextModifiers) {
-                            result.putAll(contextModifier.getVariableBindings(context, binding.getKey()));
+                            result.putAll(contextModifier.getVariableBindings(context, binding.getOid()));
                         }
                     } else {
-                        result.put(binding.getKey(), new ModifiedVariable(binding.getValue(), modifiers));
+                        result.put(binding.getOid(), new ModifiedVariable(binding.getValue(tick), modifiers));
                     }
                 } catch (ClassCastException e) {
-                    log.error("could not create variable binding for " + binding.getKey().toString(), e);
+                    log.error("could not create variable binding for " + binding.getOid().toString(), e);
                 }
             }
         }

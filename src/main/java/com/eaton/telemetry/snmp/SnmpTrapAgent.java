@@ -60,7 +60,7 @@ public class SnmpTrapAgent {
      * Basic constructor that creates a Snmp Trap sender Agent without sensor.
      * Sensors can be added later with {@link #addSensor(OID, IntFunction)}
      *
-     * @param configuration agent configuraiton
+     * @param configuration agent configuration
      * @param initialDelay initial delay before sending traps after {@link #start()} is called
      * @param period time laps between each trap sending, generate a "tick" for each sensor
      */
