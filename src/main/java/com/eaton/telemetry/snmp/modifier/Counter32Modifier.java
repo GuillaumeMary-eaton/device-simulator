@@ -13,11 +13,6 @@ public class Counter32Modifier extends AbstractIntegerModifier<Counter32> {
     }
 
     public Counter32Modifier(int minimum, int maximum, int minimumStep, int maximumStep) {
-        super(minimum, maximum, minimumStep, maximumStep);
-    }
-
-    @Override
-    protected Counter32 cast(long value) {
-        return new Counter32(value);
+        super(minimum, maximum, minimumStep, maximumStep, Counter32::new);
     }
 }

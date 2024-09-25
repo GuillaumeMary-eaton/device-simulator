@@ -12,12 +12,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
-import com.eaton.telemetry.snmp.modifier.CommunityContextModifier;
-import com.eaton.telemetry.snmp.modifier.ModifiedVariable;
-import com.eaton.telemetry.snmp.modifier.Modifier;
-import com.eaton.telemetry.snmp.modifier.VariableModifier;
 import lombok.extern.slf4j.Slf4j;
 import org.snmp4j.TransportMapping;
 import org.snmp4j.agent.BaseAgent;
@@ -114,7 +109,7 @@ public class SnmpAgent extends BaseAgent {
      */
     private final List<ManagedObject> groups = new ArrayList<>();
 
-    private Set<Sensor> bindings;
+    private Set<Sensor<Variable>> bindings;
 
     private final AtomicInteger counter = new AtomicInteger(0);
 
@@ -133,18 +128,18 @@ public class SnmpAgent extends BaseAgent {
      * @param configuration the configuration for this agent
      * @param sensors data to be exposed by the agent
      */
-    public SnmpAgent(AgentConfiguration configuration, Set<Sensor> sensors) {
+    public SnmpAgent(AgentConfiguration configuration, Set<? extends Sensor<Variable>> sensors) {
         super(new File(configuration.getPersistenceDirectory(), configuration.getName() + ".BC.cfg"),
                 new File(configuration.getPersistenceDirectory(), configuration.getName() + ".Config.cfg"),
                 new CommandProcessor(new OctetString(MPv3.createLocalEngineID())));
         this.agent.setWorkerPool(ThreadPool.create("RequestPool", 3));
         this.configuration = configuration;
-        this.bindings = sensors;
+        this.bindings = (Set<Sensor<Variable>>) sensors;
         this.destination = GenericAddress.parse("udp:" + configuration.getAddress().getHostName() + "/" + configuration.getAddress().getPort());
     }
 
-    public void setBindings(Set<Sensor> bindings) {
-        this.bindings = bindings;
+    public void setBindings(Set<? extends Sensor<Variable>> bindings) {
+        this.bindings = (Set<Sensor<Variable>>) bindings;
     }
 
     public SnmpAgent addBinding(String oid, Variable variable) {
@@ -152,7 +147,8 @@ public class SnmpAgent extends BaseAgent {
     }
 
     public SnmpAgent addBinding(OID oid, Variable variable) {
-        this.bindings.add(new Sensor(oid, value -> variable));
+        Sensor<Variable> sensor = new Sensor<>(oid, tick -> variable);
+        this.bindings.add(sensor);
         return this;
     }
 
@@ -357,8 +353,6 @@ public class SnmpAgent extends BaseAgent {
 
     /**
      * Returns the variable bindings for a device configuration and a list of bindings.
-     * <p>
-     * In this step the {@link com.eaton.telemetry.snmp.modifier.ModifiedVariable} instances will be created as a wrapper for dynamic variables.
      *
      * @return the variable bindings for the specified device configuration
      */
@@ -367,33 +361,9 @@ public class SnmpAgent extends BaseAgent {
         log.trace("get variable bindings for agent \"{}\"", configuration.getName());
         int tick = counter.getAndIncrement();
         SortedMap<OID, Variable> result = new TreeMap<>();
-        for (Sensor binding : bindings) {
-            List<VariableModifier> modifiers = configuration.getDevice().getModifiers().stream()
-                    .filter(modifier -> modifier.isApplicable(binding.getOid())).collect(Collectors.toList());
-
-            if (modifiers.isEmpty()) {
-                result.put(binding.getOid(), binding.getValue(tick));
-            } else {
-                log.trace("created modified variable for OID {}", binding.getOid());
-                try {
-                    List<CommunityContextModifier> contextModifiers = modifiers.stream()
-                            .filter(Modifier.class::isInstance)
-                            .map(Modifier.class::cast)
-                            .map(Modifier::getModifier)
-                            .filter(CommunityContextModifier.class::isInstance)
-                            .map(CommunityContextModifier.class::cast)
-                            .toList();
-                    if (!contextModifiers.isEmpty()) {
-                        for (CommunityContextModifier contextModifier : contextModifiers) {
-                            result.putAll(contextModifier.getVariableBindings(context, binding.getOid()));
-                        }
-                    } else {
-                        result.put(binding.getOid(), new ModifiedVariable(binding.getValue(tick), modifiers));
-                    }
-                } catch (ClassCastException e) {
-                    log.error("could not create variable binding for " + binding.getOid().toString(), e);
-                }
-            }
+        for (Sensor<Variable> binding : bindings) {
+            log.trace("created modified variable for OID {}", binding.getOid());
+            result.put(binding.getOid(), binding.getValue(tick));
         }
         return result;
     }

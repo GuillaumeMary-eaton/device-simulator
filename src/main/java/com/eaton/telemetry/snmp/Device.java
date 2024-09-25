@@ -1,6 +1,7 @@
 package com.eaton.telemetry.snmp;
 
 import java.util.List;
+import java.util.Set;
 
 import com.eaton.telemetry.snmp.modifier.Modifier;
 import lombok.EqualsAndHashCode;
@@ -29,7 +30,7 @@ public class Device {
      *
      * @return list of modifier definitions
      */
-    @Getter private final List<Modifier> modifiers;
+    @Getter private final Set<Sensor<Object>> modifiers;
 
     /**
      * The unmodifiable list of vlans.
@@ -44,9 +45,9 @@ public class Device {
      * @param name the name of the device
      * @param modifiers the modifiers
      */
-    public Device(String name, List<Modifier> modifiers, List<Long> vlans) {
+    public Device(String name, Set<? extends Sensor<?>> modifiers, List<Long> vlans) {
         this.name = name;
-        this.modifiers = modifiers;
+        this.modifiers = (Set<Sensor<Object>>) modifiers;
         this.vlans = vlans;
     }
 }

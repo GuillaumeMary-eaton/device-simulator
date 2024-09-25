@@ -47,7 +47,7 @@ public class SnmpTrapAgent {
     private final ScheduledExecutorService executorService;
 
     private final ExecutorService senderService = Executors.newFixedThreadPool(3);
-    private final Set<Sensor> sensors;
+    private final Set<Sensor<Variable>> sensors;
     private final Address destination;
     private final InetAddress sourceAddress;
 
@@ -68,7 +68,7 @@ public class SnmpTrapAgent {
         this(configuration, new LinkedHashSet<>(), initialDelay, period);
     }
 
-    public SnmpTrapAgent(AgentConfiguration configuration, Set<Sensor> sensors, Duration initialDelay, Duration period) {
+    public SnmpTrapAgent(AgentConfiguration configuration, Set<Sensor<Variable>> sensors, Duration initialDelay, Duration period) {
         this(GenericAddress.parse("udp:"
                         + configuration.getAddress().getHostName()
                         + "/" + configuration.getAddress().getPort()),
@@ -78,14 +78,14 @@ public class SnmpTrapAgent {
                 period);
     }
 
-    public SnmpTrapAgent(Address destination, @Nullable String community, Set<Sensor> sensors, Duration initialDelay, Duration period) {
+    public SnmpTrapAgent(Address destination, @Nullable String community, Set<Sensor<Variable>> sensors, Duration initialDelay, Duration period) {
         this(destination, getLocalHost(), community, sensors, initialDelay, period);
     }
 
     public SnmpTrapAgent(Address destination,
                          InetAddress sourceAddress,
                          @Nullable String community,
-                         Set<Sensor> sensors,
+                         Set<Sensor<Variable>> sensors,
                          Duration initialDelay,
                          Duration period) {
         this.executorService = Executors.newScheduledThreadPool(1);

@@ -1,32 +1,44 @@
 package com.eaton.telemetry.snmp.modifier;
 
+import java.util.function.IntFunction;
+import java.util.function.Supplier;
+import java.util.random.RandomGenerator;
+
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.UnsignedInteger;
 import lombok.Getter;
-import org.snmp4j.smi.UnsignedInteger32;
+import org.snmp4j.smi.AbstractVariable;
+import org.snmp4j.smi.AssignableFromLong;
 
 /**
  * This modifier has all utility methods to construct for unsigned integer variable modifiers.
+ * @param <V> the variable type to modify, should have been inheriting from {@link org.snmp4j.smi.Variable} but it
+ *          causes compilation error due to clone() method visibility conflict with Object.clone()
  */
-abstract class AbstractIntegerModifier<T extends UnsignedInteger32> implements VariableModifier<T> {
+public class AbstractIntegerModifier<V extends AbstractVariable & AssignableFromLong> implements IntFunction<V> {
+
+    private Integer currentValue = RandomGenerator.getDefault().nextInt();
 
     /** The minimum allowed number for the resulting modified variable. */
-    @Getter private final long minimum;
+    @Getter private final int minimum;
 
     /** The maximum allowed number for the resulting modified variable. */
-    @Getter private final long maximum;
+    @Getter private final int maximum;
 
     /** The minimal step by which a variable will be incremented. */
-    @Getter private final long minimumStep;
+    @Getter private final int minimumStep;
 
     /** The maximal step by which a variable will be incremented. */
-    @Getter private final long maximumStep;
+    @Getter private final int maximumStep;
 
-    public AbstractIntegerModifier(long minimum, long maximum, long minimumStep, long maximumStep) {
+    private final Supplier<V> variableFactory;
+
+    public AbstractIntegerModifier(int minimum, int maximum, int minimumStep, int maximumStep, Supplier<V> variableFactory) {
         this.minimum = minimum;
         this.maximum = maximum;
         this.minimumStep = minimumStep;
         this.maximumStep = maximumStep;
+        this.variableFactory = variableFactory;
         Preconditions.checkArgument(minimum >= 0, "minimum should not be negative");
         Preconditions.checkArgument(maximum >= 0, "maximum should not be negative");
 
@@ -34,17 +46,8 @@ abstract class AbstractIntegerModifier<T extends UnsignedInteger32> implements V
         Preconditions.checkArgument(maximum <= UnsignedInteger.MAX_VALUE.longValue(), "maximum should not exceed 2^32-1 (4294967295 decimal)");
     }
 
-    /**
-     * Casts the long value to the specified output type of the implementing modifier.
-     *
-     * @param value the value to cast
-     * @return the casted value
-     */
-    protected abstract T cast(long value);
-
-    @Override
-    public final T modify(T variable) {
-        long currentValue = variable.getValue();
+    public Integer modify(Integer variable) {
+        long currentValue = variable;
         if (currentValue < minimum || currentValue > maximum) {
             currentValue = minimum;
         }
@@ -64,6 +67,16 @@ abstract class AbstractIntegerModifier<T extends UnsignedInteger32> implements V
             newValue = maximum;
         }
 
-        return cast(newValue);
+        return (int) newValue;
+    }
+
+    @Override
+    public V apply(int tick) {
+        if (tick > 0) {
+            this.currentValue = modify(currentValue);
+        }
+        V newVariable = this.variableFactory.get();
+        newVariable.setValue(currentValue);
+        return newVariable;
     }
 }

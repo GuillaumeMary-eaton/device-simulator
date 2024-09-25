@@ -1,12 +1,24 @@
 package com.eaton.telemetry.snmp.modifier;
 
+import java.util.function.IntFunction;
+import java.util.function.Supplier;
+import java.util.random.RandomGenerator;
+
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.snmp4j.smi.AbstractVariable;
+import org.snmp4j.smi.AssignableFromInteger;
 import org.snmp4j.smi.Integer32;
 
-/** This modifier instance modifies {@link Integer32} variables. */
+/**
+ * This modifier instance modifies {@link Integer32} variables.
+ * @param <V> the variable type to modify, should have been inheriting from {@link org.snmp4j.smi.Variable} but it
+ *          causes compilation error due to clone() method visibility conflict with Object.clone()
+ */
 @Slf4j
-public class Integer32Modifier implements VariableModifier<Integer32> {
+public class Integer32Modifier<V extends AbstractVariable & AssignableFromInteger> implements IntFunction<V> {
+
+    private Integer currentValue = RandomGenerator.getDefault().nextInt();
 
     /** The minimum allowed number for the resulting modified variable. */
     @Getter private final Integer minimum;
@@ -20,18 +32,21 @@ public class Integer32Modifier implements VariableModifier<Integer32> {
     /** The maximal step by which a variable will be incremented. */
     @Getter private final Integer maximumStep;
 
+    private final Supplier<V> variableFactory;
+
     /**
      * Creates a default integer starting from 0 to {@link Integer#MAX_VALUE} with a step between 1 and 10.
      */
     public Integer32Modifier() {
-        this(0, Integer.MAX_VALUE, 1, 10);
+        this(0, Integer.MAX_VALUE, 1, 10, () -> (V) new Integer32());
     }
 
-    public Integer32Modifier(Integer minimum, Integer maximum, Integer minimumStep, Integer maximumStep) {
+    public Integer32Modifier(Integer minimum, Integer maximum, Integer minimumStep, Integer maximumStep, Supplier<V> variableFactory) {
         this.minimum = minimum;
         this.maximum = maximum;
         this.minimumStep = minimumStep;
         this.maximumStep = maximumStep;
+        this.variableFactory = variableFactory;
     }
 
     /**
@@ -71,9 +86,14 @@ public class Integer32Modifier implements VariableModifier<Integer32> {
     }
 
     @Override
-    public Integer32 modify(Integer32 variable) {
-        int newValue = this.modify(variable.getValue(), minimum, maximum, minimumStep, maximumStep);
-        log.trace("Counter32 variable {} will be tuned to {}", variable.getValue(), newValue);
-        return new Integer32(newValue);
+    public V apply(int tick) {
+        if (tick > 0) {
+            int newValue = this.modify(currentValue, minimum, maximum, minimumStep, maximumStep);
+            log.trace("Variable {} will be tuned to {}", currentValue, newValue);
+            currentValue = newValue;
+        }
+        V newVariable = this.variableFactory.get();
+        newVariable.setValue(currentValue);
+        return newVariable;
     }
 }
