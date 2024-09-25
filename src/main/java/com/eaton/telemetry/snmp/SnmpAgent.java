@@ -13,6 +13,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.eaton.telemetry.Sensor;
 import lombok.extern.slf4j.Slf4j;
 import org.snmp4j.TransportMapping;
 import org.snmp4j.agent.BaseAgent;

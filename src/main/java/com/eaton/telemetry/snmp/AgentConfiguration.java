@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.attribute.FileAttribute;
 import java.util.Optional;
 
+import com.eaton.telemetry.Device;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;

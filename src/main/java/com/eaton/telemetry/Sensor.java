@@ -1,4 +1,4 @@
-package com.eaton.telemetry.snmp;
+package com.eaton.telemetry;
 
 import java.util.function.IntFunction;
 

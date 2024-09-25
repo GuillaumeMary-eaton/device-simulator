@@ -16,7 +16,8 @@ import org.snmp4j.smi.Integer32;
  *          causes compilation error due to clone() method visibility conflict with Object.clone()
  */
 @Slf4j
-public class Integer32Modifier<V extends AbstractVariable & AssignableFromInteger> implements IntFunction<V> {
+public class Integer32Generator<V extends AbstractVariable & AssignableFromInteger>
+        implements IntFunction<V>, VariableGenerator<V> {
 
     private Integer currentValue = RandomGenerator.getDefault().nextInt();
 
@@ -37,11 +38,11 @@ public class Integer32Modifier<V extends AbstractVariable & AssignableFromIntege
     /**
      * Creates a default integer starting from 0 to {@link Integer#MAX_VALUE} with a step between 1 and 10.
      */
-    public Integer32Modifier() {
+    public Integer32Generator() {
         this(0, Integer.MAX_VALUE, 1, 10, () -> (V) new Integer32());
     }
 
-    public Integer32Modifier(Integer minimum, Integer maximum, Integer minimumStep, Integer maximumStep, Supplier<V> variableFactory) {
+    public Integer32Generator(Integer minimum, Integer maximum, Integer minimumStep, Integer maximumStep, Supplier<V> variableFactory) {
         this.minimum = minimum;
         this.maximum = maximum;
         this.minimumStep = minimumStep;

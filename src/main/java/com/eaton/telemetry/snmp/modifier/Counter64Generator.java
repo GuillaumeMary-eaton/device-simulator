@@ -16,7 +16,8 @@ import org.snmp4j.smi.Counter64;
  * @param <V> the variable type to modify, should have been inheriting from {@link org.snmp4j.smi.Variable} but it
  *          causes compilation error due to clone() method visibility conflict with Object.clone()
  */
-public class Counter64Modifier<V extends AbstractVariable & AssignableFromLong> implements IntFunction<V> {
+public class Counter64Generator<V extends AbstractVariable & AssignableFromLong>
+        implements IntFunction<V>, VariableGenerator<V> {
 
     private Long currentValue = RandomGenerator.getDefault().nextLong();
 
@@ -37,19 +38,19 @@ public class Counter64Modifier<V extends AbstractVariable & AssignableFromLong> 
     /**
      * Creates a default counter starting from 0 to {@link Integer#MAX_VALUE} with a step between 1 and 10.
      */
-    public Counter64Modifier() {
+    public Counter64Generator() {
         this(0, Long.MAX_VALUE, 1, 10, () -> (V) new Counter64());
     }
 
-    public Counter64Modifier(long minimum, long maximum, long minimumStep, long maximumStep) {
+    public Counter64Generator(long minimum, long maximum, long minimumStep, long maximumStep) {
         this(UnsignedLong.valueOf(minimum), UnsignedLong.valueOf(maximum), UnsignedLong.valueOf(minimumStep), UnsignedLong.valueOf(maximumStep), () -> (V) new Counter64());
     }
 
-    public Counter64Modifier(long minimum, long maximum, long minimumStep, long maximumStep, Supplier<V> variableFactory) {
+    public Counter64Generator(long minimum, long maximum, long minimumStep, long maximumStep, Supplier<V> variableFactory) {
         this(UnsignedLong.valueOf(minimum), UnsignedLong.valueOf(maximum), UnsignedLong.valueOf(minimumStep), UnsignedLong.valueOf(maximumStep), variableFactory);
     }
 
-    public Counter64Modifier(UnsignedLong minimum, UnsignedLong maximum, UnsignedLong minimumStep, UnsignedLong maximumStep, Supplier<V> variableFactory) {
+    public Counter64Generator(UnsignedLong minimum, UnsignedLong maximum, UnsignedLong minimumStep, UnsignedLong maximumStep, Supplier<V> variableFactory) {
         this.minimum = Optional.ofNullable(minimum).orElse(UnsignedLong.ZERO);
         this.maximum = Optional.ofNullable(maximum).orElse(UnsignedLong.MAX_VALUE);
 

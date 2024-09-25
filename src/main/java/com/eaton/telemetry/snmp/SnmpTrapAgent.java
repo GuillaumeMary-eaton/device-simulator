@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntFunction;
 
+import com.eaton.telemetry.Sensor;
 import lombok.extern.slf4j.Slf4j;
 import org.snmp4j.CommunityTarget;
 import org.snmp4j.PDU;

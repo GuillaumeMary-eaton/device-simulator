@@ -15,7 +15,8 @@ import org.snmp4j.smi.AssignableFromLong;
  * @param <V> the variable type to modify, should have been inheriting from {@link org.snmp4j.smi.Variable} but it
  *          causes compilation error due to clone() method visibility conflict with Object.clone()
  */
-public class AbstractIntegerModifier<V extends AbstractVariable & AssignableFromLong> implements IntFunction<V> {
+public class IntegerGenerator<V extends AbstractVariable & AssignableFromLong>
+        implements IntFunction<V>, VariableGenerator<V> {
 
     private Integer currentValue = RandomGenerator.getDefault().nextInt();
 
@@ -33,7 +34,7 @@ public class AbstractIntegerModifier<V extends AbstractVariable & AssignableFrom
 
     private final Supplier<V> variableFactory;
 
-    public AbstractIntegerModifier(int minimum, int maximum, int minimumStep, int maximumStep, Supplier<V> variableFactory) {
+    public IntegerGenerator(int minimum, int maximum, int minimumStep, int maximumStep, Supplier<V> variableFactory) {
         this.minimum = minimum;
         this.maximum = maximum;
         this.minimumStep = minimumStep;
