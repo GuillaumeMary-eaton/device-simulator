@@ -13,7 +13,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntFunction;
 
 import com.eaton.telemetry.Sensor;
@@ -126,11 +125,6 @@ public class SnmpTrapAgent {
     }
 
     private class PDUSendTask implements Runnable {
-        /**
-         * Counter incremented at each run() call. A sensor is not expected to receive twice the same value.
-         */
-        private final AtomicInteger counter = new AtomicInteger(0);
-
         private final Snmp snmpSession;
 
         public PDUSendTask(Snmp snmpSession) {
@@ -141,9 +135,8 @@ public class SnmpTrapAgent {
         public void run() {
             // each sensor will receive a "tick" for which t generate the value. This acts as a clock tick or counter.
             sensors.forEach(sensor -> {
-                Variable value = sensor.getValue(counter.getAndIncrement());
+                Variable value = sensor.nextValue();
                 // null value is considered as a marker to not send the trap
-                log.debug("generating value " + value + " for counter " + counter + " for sensor " + sensor.getOid());
                 if (value != null) {
                     CommunityTarget target = new CommunityTarget();
                     target.setCommunity(new OctetString(community));

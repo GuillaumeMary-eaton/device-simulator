@@ -20,7 +20,7 @@ public class MOGroup implements GenericManagedObject {
     /**
      * Sorted map of the variable bindings for this group.
      */
-    private final SortedMap<OID, Variable> variableBindings;
+    private final SortedMap<OID, SnmpSensor<Variable>> variableBindings;
 
     /**
      * The root {@code OID} for this group.
@@ -42,7 +42,7 @@ public class MOGroup implements GenericManagedObject {
      * @param oid      the {@code OID} for a variable binding
      * @param variable the variable of the variable binding
      */
-    public MOGroup(OID root, OID oid, Variable variable) {
+    public MOGroup(OID root, OID oid, SnmpSensor<Variable> variable) {
         this.root = root;
         this.scope = new DefaultMOScope(root, true, root.nextPeer(), false);
         this.variableBindings = new TreeMap<>();
@@ -55,7 +55,7 @@ public class MOGroup implements GenericManagedObject {
      * @param root             the root {@code OID}
      * @param variableBindings the map of variable bindings for this instance
      */
-    public MOGroup(OID root, SortedMap<OID, Variable> variableBindings) {
+    public MOGroup(OID root, SortedMap<OID, SnmpSensor<Variable>> variableBindings) {
         this.root = root;
         this.scope = new DefaultMOScope(root, true, root.nextPeer(), false);
         this.variableBindings = variableBindings;
@@ -68,7 +68,7 @@ public class MOGroup implements GenericManagedObject {
 
     @Override
     public OID find(MOScope range) {
-        SortedMap<OID, Variable> tail = variableBindings.tailMap(range.getLowerBound());
+        SortedMap<OID, SnmpSensor<Variable>> tail = variableBindings.tailMap(range.getLowerBound());
         OID first = tail.firstKey();
         if (range.getLowerBound().equals(first) && !range.isLowerIncluded()) {
             if (tail.size() > 1) {
@@ -85,11 +85,16 @@ public class MOGroup implements GenericManagedObject {
     @Override
     public void get(SubRequest request) {
         OID oid = request.getVariableBinding().getOid();
-        Variable variable = variableBindings.get(oid);
+        SnmpSensor<Variable> variable = variableBindings.get(oid);
         if (variable == null) {
             request.getVariableBinding().setVariable(Null.noSuchInstance);
         } else {
-            request.getVariableBinding().setVariable((Variable) variable.clone());
+            Variable newValue = variable.nextValue();
+            if (newValue != null) {
+                request.getVariableBinding().setVariable(newValue);
+            } else {
+                request.getVariableBinding().setVariable(Null.noSuchInstance);
+            }
         }
         request.completed();
     }
@@ -97,7 +102,7 @@ public class MOGroup implements GenericManagedObject {
     @Override
     public boolean next(SubRequest request) {
         MOScope scope = request.getQuery().getScope();
-        SortedMap<OID, Variable> tail = variableBindings.tailMap(scope.getLowerBound());
+        SortedMap<OID, SnmpSensor<Variable>> tail = variableBindings.tailMap(scope.getLowerBound());
         OID first = tail.firstKey();
         if (scope.getLowerBound().equals(first) && !scope.isLowerIncluded()) {
             if (tail.size() > 1) {
@@ -109,14 +114,19 @@ public class MOGroup implements GenericManagedObject {
             }
         }
         if (first != null) {
-            Variable variable = variableBindings.get(first);
+            SnmpSensor<Variable> variable = variableBindings.get(first);
             // TODO remove try / catch if no more errors occur
             // TODO add configuration check with types though (e.g. UInt32 == UInt32 Modifier?)
             try {
                 if (variable == null) {
                     request.getVariableBinding().setVariable(Null.noSuchInstance);
                 } else {
-                    request.getVariableBinding().setVariable((Variable) variable.clone());
+                    Variable newValue = variable.nextValue();
+                    if (newValue != null) {
+                        request.getVariableBinding().setVariable(newValue);
+                    } else {
+                        request.getVariableBinding().setVariable(Null.noSuchInstance);
+                    }
                 }
                 request.getVariableBinding().setOid(first);
             } catch (IllegalArgumentException e) {
@@ -153,8 +163,8 @@ public class MOGroup implements GenericManagedObject {
     public void commit(SubRequest request) {
         Variable newValue = request.getVariableBinding().getVariable();
         OID oid = request.getVariableBinding().getOid();
-        if (variableBindings.getOrDefault(oid, newValue).getSyntax() == newValue.getSyntax()) {
-            variableBindings.put(oid, newValue);
+        if (variableBindings.get(oid) != null && variableBindings.get(oid).getVariable().getSyntax() == newValue.getSyntax()) {
+            variableBindings.get(oid).setValue(newValue);
         } else {
             request.getStatus().setErrorStatus(SnmpConstants.SNMP_ERROR_INCONSISTENT_VALUE);
         }
@@ -170,7 +180,7 @@ public class MOGroup implements GenericManagedObject {
     @Override
     public void undo(SubRequest request) {
         if (request.getUndoValue() instanceof Variable) {
-            variableBindings.put(request.getVariableBinding().getOid(), (Variable) request.getUndoValue());
+            variableBindings.get(request.getVariableBinding().getOid()).setValue((Variable) request.getUndoValue());
         } else {
             variableBindings.remove(request.getVariableBinding().getOid());
         }

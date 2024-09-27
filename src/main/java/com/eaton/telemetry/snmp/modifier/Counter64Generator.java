@@ -19,7 +19,7 @@ import org.snmp4j.smi.Counter64;
 public class Counter64Generator<V extends AbstractVariable & AssignableFromLong>
         implements IntFunction<V>, VariableGenerator<V> {
 
-    private Long currentValue = RandomGenerator.getDefault().nextLong();
+    private Long currentValue = Math.abs(RandomGenerator.getDefault().nextLong());
 
     /** The minimum allowed number for the resulting modified variable. */
     @Getter private final UnsignedLong minimum;

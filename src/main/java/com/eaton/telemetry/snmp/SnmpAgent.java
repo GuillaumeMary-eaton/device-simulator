@@ -6,12 +6,10 @@ import java.lang.reflect.Field;
 import java.net.BindException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import com.eaton.telemetry.Sensor;
 import lombok.extern.slf4j.Slf4j;
@@ -110,9 +108,7 @@ public class SnmpAgent extends BaseAgent {
      */
     private final List<ManagedObject> groups = new ArrayList<>();
 
-    private Set<Sensor<Variable>> bindings;
-
-    private final AtomicInteger counter = new AtomicInteger(0);
+    private Set<SnmpSensor<Variable>> bindings;
 
     /**
      * Initializes a new instance of an SNMP agent.
@@ -120,7 +116,7 @@ public class SnmpAgent extends BaseAgent {
      * @param configuration the configuration for this agent
      */
     public SnmpAgent(AgentConfiguration configuration) {
-        this(configuration, new HashSet<>());
+        this(configuration, (Set) configuration.getDevice().getModifiers());
     }
 
     /**
@@ -129,18 +125,18 @@ public class SnmpAgent extends BaseAgent {
      * @param configuration the configuration for this agent
      * @param sensors data to be exposed by the agent
      */
-    public SnmpAgent(AgentConfiguration configuration, Set<? extends Sensor<Variable>> sensors) {
+    public SnmpAgent(AgentConfiguration configuration, Set<? extends SnmpSensor<Variable>> sensors) {
         super(new File(configuration.getPersistenceDirectory(), configuration.getName() + ".BC.cfg"),
                 new File(configuration.getPersistenceDirectory(), configuration.getName() + ".Config.cfg"),
                 new CommandProcessor(new OctetString(MPv3.createLocalEngineID())));
         this.agent.setWorkerPool(ThreadPool.create("RequestPool", 3));
         this.configuration = configuration;
-        this.bindings = (Set<Sensor<Variable>>) sensors;
+        this.bindings = (Set<SnmpSensor<Variable>>) sensors;
         this.destination = GenericAddress.parse("udp:" + configuration.getAddress().getHostName() + "/" + configuration.getAddress().getPort());
     }
 
     public void setBindings(Set<? extends Sensor<Variable>> bindings) {
-        this.bindings = (Set<Sensor<Variable>>) bindings;
+        this.bindings = (Set<SnmpSensor<Variable>>) bindings;
     }
 
     public SnmpAgent addBinding(String oid, Variable variable) {
@@ -148,7 +144,7 @@ public class SnmpAgent extends BaseAgent {
     }
 
     public SnmpAgent addBinding(OID oid, Variable variable) {
-        Sensor<Variable> sensor = new Sensor<>(oid, tick -> variable);
+        SnmpSensor<Variable> sensor = new SnmpSensor<>(oid, variable, tick -> variable);
         this.bindings.add(sensor);
         return this;
     }
@@ -209,7 +205,7 @@ public class SnmpAgent extends BaseAgent {
 
         log.trace("registering managed objects for agent \"{}\"", configuration.getName());
         for (Long vlan : vlans) {
-            SortedMap<OID, Variable> variableBindings = this.getVariableBindings(new OctetString(String.valueOf(vlan)));
+            SortedMap<OID, Variable> variableBindings = this.getVariableBindings();
 
             OctetString context = new OctetString(String.valueOf(vlan));
 
@@ -221,7 +217,7 @@ public class SnmpAgent extends BaseAgent {
                 ManagedObject mo = server.lookup(new DefaultMOQuery(scope, false));
                 if (mo != null) {
                     for (VariableBinding variableBinding : subtree) {
-                        group = new MOGroup(variableBinding.getOid(), variableBinding.getOid(), variableBinding.getVariable());
+                        group = new MOGroup(variableBinding.getOid(), variableBinding.getOid(), findSensor(variableBinding.getVariable()));
                         scope = new DefaultMOContextScope(context, variableBinding.getOid(), true, variableBinding.getOid().nextPeer(), false);
                         mo = server.lookup(new DefaultMOQuery(scope, false));
                         if (mo != null) {
@@ -240,11 +236,22 @@ public class SnmpAgent extends BaseAgent {
         createAndRegisterDefaultContext();
     }
 
+    /**
+     * Look fo the sensor generating given variable data into the defined bindings.
+     * @param variable the variable to find the sensor for
+     * @return the found sensor, null if not found, which should not happen
+     */
+    private SnmpSensor<Variable> findSensor(Variable variable) {
+        return this.bindings.stream()
+                .filter(sensor -> System.identityHashCode(sensor.getVariable()) == System.identityHashCode(variable))
+                .findFirst().orElse(null);
+    }
+
     private MOGroup createGroup(OID root, SortedMap<OID, Variable> variableBindings) {
-        SortedMap<OID, Variable> subtree = new TreeMap<>();
+        SortedMap<OID, SnmpSensor<Variable>> subtree = new TreeMap<>();
         variableBindings.entrySet().stream().filter(binding -> binding.getKey().size() >= root.size()).filter(
                 binding -> binding.getKey().leftMostCompare(root.size(), root) == 0).forEach(
-                        binding -> subtree.put(binding.getKey(), binding.getValue())
+                        binding -> subtree.put(binding.getKey(), findSensor(binding.getValue()))
         );
 
         return new MOGroup(root, subtree);
@@ -254,7 +261,7 @@ public class SnmpAgent extends BaseAgent {
      * Creates the {@link StaticMOGroup} with all information necessary to register it to the server.
      */
     private void createAndRegisterDefaultContext() {
-        SortedMap<OID, Variable> variableBindings = this.getVariableBindings(new OctetString());
+        SortedMap<OID, Variable> variableBindings = this.getVariableBindings();
         List<OID> roots = SnmpAgent.getRoots(variableBindings);
         for (OID root : roots) {
             MOGroup group = createGroup(root, variableBindings);
@@ -353,18 +360,15 @@ public class SnmpAgent extends BaseAgent {
     }
 
     /**
-     * Returns the variable bindings for a device configuration and a list of bindings.
-     *
-     * @return the variable bindings for the specified device configuration
+     * @return the variable bindings
      */
     @SuppressWarnings("unchecked")
-    private SortedMap<OID, Variable> getVariableBindings(OctetString context) {
+    private SortedMap<OID, Variable> getVariableBindings() {
         log.trace("get variable bindings for agent \"{}\"", configuration.getName());
-        int tick = counter.getAndIncrement();
         SortedMap<OID, Variable> result = new TreeMap<>();
-        for (Sensor<Variable> binding : bindings) {
+        for (SnmpSensor<Variable> binding : bindings) {
             log.trace("created modified variable for OID {}", binding.getOid());
-            result.put(binding.getOid(), binding.getValue(tick));
+            result.put(binding.getOid(), binding.getVariable());
         }
         return result;
     }
@@ -480,6 +484,17 @@ public class SnmpAgent extends BaseAgent {
             try {
                 Thread.sleep(100L);
                 waitForStartup();
+            } catch (InterruptedException e) {
+                log.warn("wait was interrupted", e);
+            }
+        }
+    }
+
+    public void waitForShutdown() {
+        if (getAgentState() != STATE_STOPPED) {
+            try {
+                Thread.sleep(100L);
+                waitForShutdown();
             } catch (InterruptedException e) {
                 log.warn("wait was interrupted", e);
             }

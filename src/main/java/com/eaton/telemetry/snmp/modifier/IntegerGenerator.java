@@ -18,7 +18,7 @@ import org.snmp4j.smi.AssignableFromLong;
 public class IntegerGenerator<V extends AbstractVariable & AssignableFromLong>
         implements IntFunction<V>, VariableGenerator<V> {
 
-    private Integer currentValue = RandomGenerator.getDefault().nextInt();
+    private Integer currentValue = modify(RandomGenerator.getDefault().nextInt());
 
     /** The minimum allowed number for the resulting modified variable. */
     @Getter private final int minimum;

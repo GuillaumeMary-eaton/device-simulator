@@ -1,5 +1,6 @@
 package com.eaton.telemetry;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntFunction;
 
 import lombok.Getter;
@@ -11,6 +12,8 @@ public class Sensor<V> {
     private final OID oid;
 
     private final IntFunction<V> valueGenerator;
+
+    private final AtomicInteger tickGenerator = new AtomicInteger(0);
 
     /**
      * Creates a new sensor with the given OID and value generator.
@@ -40,5 +43,9 @@ public class Sensor<V> {
      */
     public V getValue(int index) {
         return valueGenerator.apply(index);
+    }
+
+    public V nextValue() {
+        return valueGenerator.apply(tickGenerator.getAndIncrement());
     }
 }
