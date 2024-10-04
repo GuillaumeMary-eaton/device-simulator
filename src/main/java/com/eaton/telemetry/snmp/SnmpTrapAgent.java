@@ -47,7 +47,7 @@ public class SnmpTrapAgent {
     private final ScheduledExecutorService executorService;
 
     private final ExecutorService senderService = Executors.newFixedThreadPool(3);
-    private final Set<Sensor<Variable>> sensors;
+    private final Set<Sensor<Variable, OID>> sensors;
     private final Address destination;
     private final InetAddress sourceAddress;
 
@@ -68,7 +68,7 @@ public class SnmpTrapAgent {
         this(configuration, new LinkedHashSet<>(), initialDelay, period);
     }
 
-    public SnmpTrapAgent(AgentConfiguration configuration, Set<Sensor<Variable>> sensors, Duration initialDelay, Duration period) {
+    public SnmpTrapAgent(AgentConfiguration configuration, Set<? extends Sensor<Variable, OID>> sensors, Duration initialDelay, Duration period) {
         this(GenericAddress.parse("udp:"
                         + configuration.getAddress().getHostName()
                         + "/" + configuration.getAddress().getPort()),
@@ -78,18 +78,18 @@ public class SnmpTrapAgent {
                 period);
     }
 
-    public SnmpTrapAgent(Address destination, @Nullable String community, Set<Sensor<Variable>> sensors, Duration initialDelay, Duration period) {
+    public SnmpTrapAgent(Address destination, @Nullable String community, Set<? extends Sensor<Variable, OID>> sensors, Duration initialDelay, Duration period) {
         this(destination, getLocalHost(), community, sensors, initialDelay, period);
     }
 
     public SnmpTrapAgent(Address destination,
                          InetAddress sourceAddress,
                          @Nullable String community,
-                         Set<Sensor<Variable>> sensors,
+                         Set<? extends Sensor<Variable, OID>> sensors,
                          Duration initialDelay,
                          Duration period) {
         this.executorService = Executors.newScheduledThreadPool(1);
-        this.sensors = sensors;
+        this.sensors = (Set<Sensor<Variable, OID>>) sensors;
         this.destination = destination;
         this.community = community;
         this.sourceAddress = sourceAddress;
@@ -135,6 +135,7 @@ public class SnmpTrapAgent {
         public void run() {
             // each sensor will receive a "tick" for which t generate the value. This acts as a clock tick or counter.
             sensors.forEach(sensor -> {
+                log.info("Sending trap for sensor " + sensor.getIdentifier());
                 Variable value = sensor.nextValue();
                 // null value is considered as a marker to not send the trap
                 if (value != null) {
@@ -146,13 +147,19 @@ public class SnmpTrapAgent {
                     target.setTimeout(100); // milliseconds
                     target.setRetries(2);
 
-                    PDU pdu = new PDU();
-                    // need to specify the system up time
-                    pdu.add(new VariableBinding(SnmpConstants.sysUpTime, new OctetString(new Date().toString())));
-                    pdu.add(new VariableBinding(SnmpConstants.snmpTrapOID, sensor.getOid()));
-                    pdu.add(new VariableBinding(SnmpConstants.snmpTrapAddress, new IpAddress(sourceAddress)));
-                    pdu.add(new VariableBinding(sensor.getOid(), value));
-                    pdu.setType(PDU.NOTIFICATION);
+                    PDU pdu;
+                    try {
+                        pdu = new PDU();
+                        // need to specify the system up time
+                        pdu.add(new VariableBinding(SnmpConstants.sysUpTime, new OctetString(new Date().toString())));
+                        pdu.add(new VariableBinding(SnmpConstants.snmpTrapOID, sensor.getIdentifier()));
+                        pdu.add(new VariableBinding(SnmpConstants.snmpTrapAddress, new IpAddress(sourceAddress)));
+                        pdu.add(new VariableBinding(sensor.getIdentifier(), value));
+                        pdu.setType(PDU.NOTIFICATION);
+                    } catch (RuntimeException e) {
+                        log.error("Error while creating PDU", e);
+                        return;
+                    }
 
                     senderService.submit(() -> {
                         try {

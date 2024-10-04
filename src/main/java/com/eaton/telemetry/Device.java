@@ -30,7 +30,7 @@ public class Device {
      *
      * @return list of modifier definitions
      */
-    @Getter private final Set<Sensor<Object>> modifiers;
+    @Getter private final Set<Sensor<Object, Object>> modifiers;
 
     /**
      * The unmodifiable list of vlans.
@@ -45,9 +45,9 @@ public class Device {
      * @param name the name of the device
      * @param modifiers the modifiers
      */
-    public Device(String name, Set<? extends Sensor<?>> modifiers, List<Long> vlans) {
+    public Device(String name, Set<? extends Sensor<?, ?>> modifiers, List<Long> vlans) {
         this.name = name;
-        this.modifiers = (Set<Sensor<Object>>) modifiers;
+        this.modifiers = (Set<Sensor<Object, Object>>) modifiers;
         this.vlans = vlans;
     }
 }

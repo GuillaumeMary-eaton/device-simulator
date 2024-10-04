@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import com.eaton.telemetry.Sensor;
 import lombok.extern.slf4j.Slf4j;
 import org.snmp4j.TransportMapping;
 import org.snmp4j.agent.BaseAgent;
@@ -135,7 +134,7 @@ public class SnmpAgent extends BaseAgent {
         this.destination = GenericAddress.parse("udp:" + configuration.getAddress().getHostName() + "/" + configuration.getAddress().getPort());
     }
 
-    public void setBindings(Set<? extends Sensor<Variable>> bindings) {
+    public void setBindings(Set<? extends SnmpSensor<Variable>> bindings) {
         this.bindings = (Set<SnmpSensor<Variable>>) bindings;
     }
 
@@ -367,8 +366,8 @@ public class SnmpAgent extends BaseAgent {
         log.trace("get variable bindings for agent \"{}\"", configuration.getName());
         SortedMap<OID, Variable> result = new TreeMap<>();
         for (SnmpSensor<Variable> binding : bindings) {
-            log.trace("created modified variable for OID {}", binding.getOid());
-            result.put(binding.getOid(), binding.getVariable());
+            log.trace("created modified variable for OID {}", binding.getIdentifier());
+            result.put(binding.getIdentifier(), binding.getVariable());
         }
         return result;
     }

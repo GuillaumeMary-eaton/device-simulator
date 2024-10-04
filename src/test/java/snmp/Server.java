@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Set;
 
 import com.eaton.telemetry.Device;
-import com.eaton.telemetry.Sensor;
 import com.eaton.telemetry.snmp.AgentConfiguration;
 import com.eaton.telemetry.snmp.SnmpAgent;
 import com.eaton.telemetry.snmp.SnmpSensor;
@@ -26,7 +25,7 @@ public class Server {
                 "example",
                 new Device(
                         "Cisco",
-                        Set.<Sensor<?>>of(
+                        Set.<SnmpSensor<?>>of(
                                 new SnmpSensor<>(".1.3.6.1.4.1.9.2.1.56", new Integer32(), new Integer32Generator<>(0, 100, 0, 100, Integer32::new)),
                                 new SnmpSensor<>(".1.3.6.1.4.1.9.2.1.57", new Integer32(), new Integer32Generator<>(0, 100, 0, 100, Integer32::new)),
                                 new SnmpSensor<>(".1.3.6.1.4.1.9.2.1.58", new Integer32(), new Integer32Generator<>(0, 100, 0, 100, Integer32::new)),

@@ -4,12 +4,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntFunction;
 
 import lombok.Getter;
-import org.snmp4j.smi.OID;
 
-public class Sensor<V> {
+/**
+ * Class representing a sensor.
+ * @param <V>
+ * @param <I>
+ */
+public class Sensor<V, I> {
 
     @Getter
-    private final OID oid;
+    private final I identifier;
 
     private final IntFunction<V> valueGenerator;
 
@@ -18,21 +22,11 @@ public class Sensor<V> {
     /**
      * Creates a new sensor with the given OID and value generator.
      *
-     * @param oid the identifier of the sensor
+     * @param identifier the identifier of the sensor
      * @param valueGenerator a function returning a value for every "tick" it is called, the "tick" is represented by a counter
      */
-    public Sensor(String oid, IntFunction<V> valueGenerator) {
-        this(new OID(oid), valueGenerator);
-    }
-
-    /**
-     * Creates a new sensor with the given OID and value generator.
-     *
-     * @param oid the identifier of the sensor
-     * @param valueGenerator a function returning a value for every "tick" it is called, the "tick" is represented by a counter
-     */
-    public Sensor(OID oid, IntFunction<V> valueGenerator) {
-        this.oid = oid;
+    public Sensor(I identifier, IntFunction<V> valueGenerator) {
+        this.identifier = identifier;
         this.valueGenerator = valueGenerator;
     }
 
