@@ -14,7 +14,9 @@ import static net.solarnetwork.io.modbus.netty.msg.RegistersModbusMessage.readHo
 public class ModbusServer {
 
     public static void main(String[] args) throws IOException {
-        int port = new ServerSocket(0).getLocalPort();
+        ServerSocket serverSocket = new ServerSocket(0);
+        int port = serverSocket.getLocalPort();
+        serverSocket.close();
         NettyTcpModbusServer server = new NettyTcpModbusServer(port);
         server.setMessageHandler((msg, sender) -> {
             // this handler only supports read holding registers requests
