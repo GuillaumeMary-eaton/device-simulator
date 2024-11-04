@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
 import net.solarnetwork.io.modbus.BitsModbusMessage;
 import net.solarnetwork.io.modbus.ModbusErrorCode;
 import net.solarnetwork.io.modbus.ModbusMessage;
@@ -20,6 +21,7 @@ import static net.solarnetwork.io.modbus.netty.msg.BitsModbusMessage.readDiscret
 import static net.solarnetwork.io.modbus.netty.msg.RegistersModbusMessage.readHoldingsResponse;
 import static net.solarnetwork.io.modbus.netty.msg.RegistersModbusMessage.readInputsResponse;
 
+@Slf4j
 public class ModbusAgent {
 
     private NettyTcpModbusServer server;
@@ -42,6 +44,7 @@ public class ModbusAgent {
     public void configure() {
         server.setMessageHandler((msg, sender) -> {
             ModbusMessage modbusMessage = null;
+            log.info("Reading value of sensor: {}", msg.getUnitId());
             ModbusSensor<?> modbusSensor = sensors.get(msg.getUnitId());
             final Object sensorValue = modbusSensor.nextValue();
             if (sensorValue == null) {
